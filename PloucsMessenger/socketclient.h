@@ -11,7 +11,7 @@ class SocketClient : public QObject
 {
     Q_OBJECT
 public:
-    explicit SocketClient(QObject *parent = 0);
+    explicit SocketClient(QString pseudo, QObject *parent = 0);
     ~SocketClient();
     void start();
     qint64 write(QByteArray data);
@@ -34,6 +34,7 @@ private:
     void addUser(int id, QString pseudo);
     void removeUser(int id);
 
+    QString pseudo;
     QTcpSocket *socket;
     QMap<int, QString> users;
     int ownID = 0;

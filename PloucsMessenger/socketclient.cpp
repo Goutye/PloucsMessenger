@@ -1,9 +1,8 @@
 #include "socketclient.h"
-#include <time.h>
 
-SocketClient::SocketClient(QObject *parent) : QObject(parent)
+SocketClient::SocketClient(QString pseudo = "", QObject *parent) : QObject(parent)
 {
-
+    this->pseudo = pseudo;
 }
 
 SocketClient::~SocketClient()
@@ -30,9 +29,7 @@ void SocketClient::start()
 void SocketClient::connected()
 {
     qDebug() << "Connected!";
-
-    qsrand(time(0));
-    write(QString("con:Goutye%1").arg(qrand() % 100).toLatin1());
+    write(QString("con:" + pseudo).toLatin1());
 }
 
 void SocketClient::disconnected()
@@ -58,14 +55,18 @@ void SocketClient::readyRead()
 
         if (prefix.compare("msg") == 0)
         {
+            QStringList sl = s.split(":");
+            s = users.value(sl.at(0).toInt()) + ":" + sl.at(1);
             qDebug() << s;
             emit newMessage(s);
         }
         else if (prefix.compare("pm") == 0)
         {
             qDebug() << s;
-            QString target = s.split(":").at(0);
-            emit newMessage(s, target.toInt());
+            QStringList sl = s.split(":");
+            int target = sl.at(0).toInt();
+            s = users.value(target) + ":" + sl.at(1);
+            emit newMessage(s, target);
         }
         else if (prefix.compare("con") == 0)
         {
@@ -77,9 +78,6 @@ void SocketClient::readyRead()
             }
             else {
                 emit connection(sl.at(0).toInt(), sl.at(1));
-
-                write(QString("pm:%1:LOL").arg(users.begin().key()).toLatin1());
-                qDebug() << QString("pm:%1:LOL").arg(users.begin().key());
             }
 
             emit newMessage(sl.at(1) + " is now Online.");
@@ -98,9 +96,7 @@ void SocketClient::readyRead()
                 QStringList infos = QString(*it).split(":");
                 emit connection(infos.at(0).toInt(), infos.at(1));
                 addUser(infos.at(0).toInt(), infos.at(1));
-                qDebug() << "Added a new user with connection";
             }
-            emit newMessage("LOL");
         }
         else
         {
