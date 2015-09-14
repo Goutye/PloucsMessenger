@@ -4,8 +4,10 @@
 #include <QObject>
 #include <QDebug>
 #include <QNetworkAccessManager>
+#include <QNetworkReply>
 #include <QAbstractSocket>
 #include <QVector>
+#include <QUrl>
 
 class SocketClient : public QObject
 {
@@ -13,8 +15,9 @@ class SocketClient : public QObject
 public:
     explicit SocketClient(QString pseudo, QObject *parent = 0);
     ~SocketClient();
+    void delay( int millisecondsToWait );
     void start();
-    qint64 write(QByteArray data);
+    bool write(QByteArray data);
 
 signals:
     void connection(int id, QString pseudo);
@@ -27,7 +30,6 @@ public slots:
     void post(QString data, int id);
     void connected();
     void disconnected();
-    void bytesWritten(qint64 bytes);
     void replyFinished(QNetworkReply* reply);
 
 private:
@@ -36,6 +38,7 @@ private:
 
     QString pseudo;
     QNetworkAccessManager *manager;
+    QUrl url;
     QMap<int, QString> users;
     int ownID = 0;
 };
