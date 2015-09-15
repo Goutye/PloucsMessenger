@@ -6,6 +6,8 @@
 #include <QShortcut>
 #include <QKeySequence>
 #include <QInputDialog>
+#include <QDialogButtonBox>
+#include <QFormLayout>
 #include <time.h>
 
 #define LABEL_BACKGROUND_ACTIVE_COLOR "#BBBBBB"
@@ -18,19 +20,16 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     qsrand(time(0));
-    bool ok;
-    pseudo = QInputDialog::getText(this, tr("Plouc's Messenger - Connection"),
-                                             tr("Pseudo:"), QLineEdit::Normal,
-                                             "", &ok);
-    if (!ok || pseudo.isEmpty())
-        pseudo = QString("Anon%1").arg(qrand()%1000);
-    socket = new SocketClient(pseudo);
+
+    socket = new SocketClient();
     connect(socket, SIGNAL(connection(int,QString)), this, SLOT(connection(int,QString)));
     connect(socket, SIGNAL(disconnection(int)), this, SLOT(disconnection(int)));
     connect(socket, SIGNAL(newMessage(QString)), this, SLOT(newMessage(QString)));
     connect(socket, SIGNAL(newMessage(QString,int)), this, SLOT(newMessage(QString,int)));
     connect(this, SIGNAL(post(QString)), socket, SLOT(post(QString)));
     connect(this, SIGNAL(post(QString,int)), socket, SLOT(post(QString,int)));
+    connect(socket, SIGNAL(wrongPassword(QString)), this, SLOT(connectionUser(QString)));
+    connect(this, SIGNAL(disconnectionUser()), socket, SLOT(disconnected()));
 
     window = new QWidget;
 
@@ -126,12 +125,49 @@ MainWindow::MainWindow(QWidget *parent)
     window->setStyleSheet("background:transparent;");
     setWindowOpacity(0.9);
     resize(DEFAULT_WIDTH, height());
-    socket->start();
+    connectionUser();
 }
 
 MainWindow::~MainWindow()
 {
 
+}
+
+void MainWindow::connectionUser(QString error)
+{
+    if (error.isEmpty())
+        error = "Connection to Ploucs messenger";
+
+    QDialog dialog(this);
+    QFormLayout form(&dialog);
+    QLabel *dialogLabel = new QLabel(error);
+    form.addRow(dialogLabel);
+
+    QLineEdit *lineEditPseudo = new QLineEdit(&dialog);
+    form.addRow("Pseudo:", lineEditPseudo);
+    QLineEdit *lineEditPassword = new QLineEdit(&dialog);
+    lineEditPassword->setEchoMode(QLineEdit::Password);
+    form.addRow("Password:", lineEditPassword);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QString password;
+
+    do {
+        if (dialog.exec() == QDialog::Accepted) {
+            pseudo = lineEditPseudo->text();
+            password = lineEditPassword->text();
+            if (pseudo.isEmpty()) {
+                dialogLabel->setText("Pseudo field was empty.");
+            }
+        } else {
+            QTimer::singleShot(0, this, SLOT(close()));
+            return;
+        }
+    } while(pseudo.isEmpty());
+
+    socket->start(pseudo, password);
 }
 
 void MainWindow::connection(int id, QString pseudo)
@@ -262,4 +298,10 @@ void MainWindow::mousePressEvent(QMouseEvent* event)
 void MainWindow::mouseMoveEvent(QMouseEvent* event)
 {
     move(event->globalX()-m_nMouseClick_X_Coordinate,event->globalY()-m_nMouseClick_Y_Coordinate);
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    emit disconnectionUser();
+    event->accept();
 }

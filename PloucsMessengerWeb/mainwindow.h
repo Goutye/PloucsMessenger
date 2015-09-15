@@ -28,10 +28,15 @@ public slots:
     void post();
     void nextChat();
     void prevChat();
+    void connectionUser(QString error = 0);
 
 signals:
     void post(QString data);
     void post(QString data, int id);
+    void disconnectionUser();
+
+protected:
+    void closeEvent(QCloseEvent *event);
 
 private:
     SocketClient *socket;

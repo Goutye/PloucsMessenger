@@ -8,19 +8,21 @@
 #include <QAbstractSocket>
 #include <QVector>
 #include <QUrl>
+#include <QTimer>
 
 class SocketClient : public QObject
 {
     Q_OBJECT
 public:
-    explicit SocketClient(QString pseudo, QObject *parent = 0);
+    explicit SocketClient(QObject *parent = 0);
     ~SocketClient();
     void delay( int millisecondsToWait );
-    void start();
+    void start(QString pseudo, QString password);
     bool write(QByteArray data);
 
 signals:
     void connection(int id, QString pseudo);
+    void wrongPassword(QString error);
     void disconnection(int id);
     void newMessage(QString data);
     void newMessage(QString data, int id);
@@ -30,6 +32,9 @@ public slots:
     void post(QString data, int id);
     void connected();
     void disconnected();
+
+private slots:
+    void ping();
     void replyFinished(QNetworkReply* reply);
 
 private:
@@ -37,10 +42,12 @@ private:
     void removeUser(int id);
 
     QString pseudo;
+    QString password;
     QNetworkAccessManager *manager;
     QUrl url;
     QMap<int, QString> users;
     int ownID = 0;
+    QTimer *timerPing;
 };
 
 #endif // SOCKETCLIENT_H

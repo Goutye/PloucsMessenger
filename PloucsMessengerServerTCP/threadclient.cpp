@@ -47,7 +47,7 @@ void ThreadClient::readyRead()
         else if (prefix.compare("pm") == 0)
         {
             QString target = s.split(":").at(1);
-            data.replace(prefix.size() + 1, target.size(), QString("%1").arg(socketDescriptor).toLatin1());
+            data.replace(prefix.size() + 1, target.size(), QString("%1").arg(socketDescriptor).toUtf8());
             qDebug() << data;
             emit pmReceived(target.toInt(), data);
         }

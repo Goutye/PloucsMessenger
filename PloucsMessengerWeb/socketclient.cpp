@@ -5,10 +5,12 @@
 #include <QCoreApplication>
 #include <QTime>
 
-SocketClient::SocketClient(QString pseudo = "", QObject *parent) : QObject(parent)
+SocketClient::SocketClient(QObject *parent) : QObject(parent)
 {
-    this->pseudo = pseudo;
     this->url = QUrl("http://www.goutye.com/ploucs/index.php");
+    manager = new QNetworkAccessManager;
+    manager->setCookieJar(new QNetworkCookieJar);
+    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(replyFinished(QNetworkReply*)));
 }
 
 SocketClient::~SocketClient()
@@ -25,11 +27,10 @@ void SocketClient::delay( int millisecondsToWait )
     }
 }
 
-void SocketClient::start()
+void SocketClient::start(QString pseudo, QString password)
 {
-    manager = new QNetworkAccessManager;
-    manager->setCookieJar(new QNetworkCookieJar);
-    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(replyFinished(QNetworkReply*)));
+    this->pseudo = pseudo;
+    this->password = password;
 
     qDebug() << "Connecting...";
 
@@ -44,23 +45,33 @@ void SocketClient::start()
 void SocketClient::connected()
 {
     qDebug() << "Connected!";
-    write(QString("con:" + pseudo).toUtf8());
+    write(QString("con:" + pseudo + ":" + password).toUtf8());
+    password = "";
+    timerPing = new QTimer;
+    connect(timerPing, SIGNAL(timeout()), this, SLOT(ping()));
+    timerPing->start(1000);
 }
 
 void SocketClient::disconnected()
 {
     qDebug() << "Disconnected!";
+    write(QString("dcn").toUtf8());
 }
 
 void SocketClient::replyFinished(QNetworkReply* reply)
 {
-    qDebug() << "Reading...";
     QString s;
 
     while((s = QString(reply->readLine())) > 0 )
     {
-        if (s.compare("NO") || s.compare("OK")) {
+        if (s.compare("NO") == 0 || s.compare("OK") == 0) {
             qDebug() << s;
+        }
+        else if (s.compare("BAD_PWD") == 0) {
+            timerPing->stop();
+            qDebug() << s;
+            emit wrongPassword("Wrong combination of pseudo and password.");
+            return;
         }
         else {
             s.remove(s.size()-1, 1);
@@ -121,6 +132,16 @@ void SocketClient::replyFinished(QNetworkReply* reply)
     }
 }
 
+void SocketClient::ping()
+{
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader,
+        "application/x-www-form-urlencoded");
+
+    manager->get(request);
+    timerPing->start(1000);
+}
+
 void SocketClient::post(QString data)
 {
     write(QString("msg:" + data).toLatin1());
@@ -134,6 +155,7 @@ void SocketClient::post(QString data, int id)
 bool SocketClient::write(QByteArray data)
 {
     data.append('\n');
+    qDebug() << QString("Write: ") + data;
 
     QUrlQuery postData;
     postData.addQueryItem("cmd", QString(data));

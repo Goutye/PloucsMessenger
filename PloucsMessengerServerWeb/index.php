@@ -1,25 +1,25 @@
 <?PHP 
+ini_set('display_errors', 'On');
+error_reporting(E_ALL);
 
-ini_set('display_startup_errors',1);
-ini_set('display_errors',1);
-error_reporting(-1);
-
-include_once("includes/db.php");
+include_once("../includes/db.php");
 
 setcookie("pass", "ok", 0);
 
 function sendCMDTo($cmd, $idUser, $msg) {
-	$query = "INSERT INTO ploucs_messages VALUES('". $idUser ."', '". $msg ."', '". $cmd ."')";
+	global $db;
+	$query = "INSERT INTO ploucs_messages VALUES('". $idUser ."', '". $msg ."', '". $cmd ."', CURRENT_TIMESTAMP())";
 	try {
 		$req = $db->exec($query);
 	} catch(PDOException $e) {
-		echo $e->getMessage();
+		echo $query. ": " .$e->getMessage();
 		return 1;
 	}
 }
 
 function getUsers() {
-	$users = {};
+	global $db;
+	$users = array();
 	$i = 0;
 	try {
 		$req = $db->query("SELECT id FROM ploucs_users");
@@ -27,32 +27,39 @@ function getUsers() {
 			$users[$i++] = $rep->id;
 		}
 	} catch(PDOException $e) {
-		echo $e->getMessage();
+		echo $query. ": " .$e->getMessage();
 		return;
 	}
+	return $users;
 }
 
 function getConnectedUsers() {
-	$users = {};
+	global $db;
+	$users = array();
 	$i = 0;
 	try {
-		$req = $db->query("SELECT id FROM ploucs_connected");
+		$req = $db->query("SELECT userId FROM ploucs_connected");
 		while($rep = $req->fetch(PDO::FETCH_OBJ)) {
 			$users[$i++] = $rep->userId;
 		}
 	} catch(PDOException $e) {
-		echo $e->getMessage();
+		echo $query. ": " .$e->getMessage();
 		return;
 	}
+	return $users;
 }
 
 if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
+	if (isset($_COOKIE['id']))
+		$clientID = htmlspecialchars($_COOKIE['id']);
+	else
+		$clientID = "";
+
 	if (isset($_POST['cmd'])) {
-		echo "OK";
-
 		$cmdFull = htmlspecialchars($_POST['cmd']);
-		$cmd = explode($cmdFull, ':');
+		$cmd = explode(':', $cmdFull);
 
+		//evaluate cmd
 		switch($cmd[0]) {
 			case "con":
 				//Get the user with the pseudo $cmd[1]
@@ -64,11 +71,12 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 						$pwd = $rep->pwd;
 					}
 				} catch(PDOException $e) {
-					echo $e->getMessage();
+					echo $query. ": " .$e->getMessage();
 					return;
 				}
 
 				$loginPwd = md5($cmd[2]);
+				$passwordOK = false;
 
 				//If no pwd
 				if ($pwd == "" and $cmd[2] != "") {
@@ -76,49 +84,101 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 						$query = "UPDATE ploucs_users SET pwd = '". $loginPwd ."' WHERE id = '". $id ."'";
 						$req = $db->exec($query);
 					} catch(PDOException $e) {
-						echo $e->getMessage();
+						echo $query. ": " .$e->getMessage();
 						return;
 					}
+
+					$passwordOK = true;
 				} //If isset pwd
 				else {
-					if ($pwd == $loginPwd) {
-						//cookie own id
-						setcookie("id", $id . "", 0);
-						echo "OK";
+					$passwordOK = $pwd == $loginPwd;
+				}
 
-						//Add to the connected users list
-						$query = "INSERT INTO ploucs_connected VALUES('". $i ."', GETUTCDATE())";
-						try {
-							$req = $db->exec($query);
-						}catch(PDOException $e) {
-							echo $e->getMessage();
-							return;
-						}
+				if ($passwordOK) {
+					//cookie own id
+					setcookie("id", $id . "", 0);
+					echo "OK";
 
-						//Notify the others connected users
-						$users = getConnectedUsers();
-						foreach ($users as $u)
-							sendCMDTo("con", $u, "con:". $id .":". $cmd[1]);
+					//Add to the connected users list
+					$query = "INSERT INTO ploucs_connected VALUES('". $id ."', CURRENT_TIMESTAMP())";
+					try {
+						$req = $db->exec($query);
+					}catch(PDOException $e) {
+						echo $query . ": " .$e->getMessage();
+						return;
 					}
-					else
-						echo "BAD_PWD";
-				} 
+
+					//Notify the others connected users
+					$users = getConnectedUsers();
+					foreach ($users as $u)
+						sendCMDTo("con", $u, "con:". $id .":". $cmd[1]);
+				}
+				else {
+					echo "BAD_PWD";
+				}
 				break;
-			case "dis":
+			case "dcn":
+				$query = "DELETE FROM ploucs_connected WHERE userId = '". $clientID ."'";
+				try {
+					$req = $db->exec($query);
+				}catch(PDOException $e) {
+					echo $query. ": " .$e->getMessage();
+				}
+				$users = getConnectedUsers();
+				foreach ($users as $u)
+					sendCMDTo("dcn", $u, "dcn:" . $clientID);
+				unset($_COOKIE['mycookiename']);
 				break;
 			case "msg":
+				$users = getUsers();
+				foreach ($users as $u)
+					sendCMDTo("msg", $u, "msg:" . $clientID . ": " . $cmd[1]);
 				break;
 			case "pm":
+				sendCMDTo("pm", $cmd[1], "pm:" . $clientID . ": " . $cmd[2]);
 				break;
 			default:
 				echo "NO MATCHING CMD FOR '". $cmd[0] ."'";
 		}		
-		//evaluate cmd
 	}
 	else {
 		//unstack
+		if ($clientID == "") {
+			echo "FAIL: NO USER ID FOUND! Why did you eat the cookie? :/";
+		} else {
+			//Update the last_date we saw the user
+			$query = "UPDATE ploucs_connected SET last_date = CURRENT_TIMESTAMP() WHERE userId = '". $clientID ."'";
+			try {
+				$req = $db->exec($query);
+
+				//Get the msg from the stack
+				$req = $db->query("SELECT msg FROM ploucs_messages WHERE toId = '". $clientID ."' ORDER BY date"); 
+				while($rep = $req->fetch(PDO::FETCH_OBJ)) {
+					echo $rep->msg . "\n";
+				}
+				$db->exec("DELETE FROM ploucs_messages WHERE toId = '". $clientID . "'");
+
+				//Delete the users who are disconnected by time-out.
+				$req = $db->query("SELECT userId FROM ploucs_connected WHERE last_date < CURRENT_TIMESTAMP() - INTERVAL 10 SECOND");
+				if ($req->rowCount() > 0) {
+					$query = $db->prepare("DELETE FROM ploucs_connected WHERE last_date < CURRENT_TIMESTAMP() - INTERVAL 10 SECOND");
+					$query->execute();
+
+					//If we are the one who was the first to delete the disconnected user (Case of someone else reached the SELECT before the right user reach the DELETE)
+					if ($req->rowCount() == $query->rowCount()) {
+						$users = getConnectedUsers();
+						while($rep = $req->fetch(PDO::FETCH_OBJ)) {
+							foreach ($users as $u)
+								sendCMDTo("dcn", $u, "dcn:" . $rep->userId);
+						}
+					}
+				}
+
+			}catch(PDOException $e) {
+				echo $query. ": " .$e->getMessage();
+			}
+		}
 	}	
 }
 else echo "NO";
-
 ?>
