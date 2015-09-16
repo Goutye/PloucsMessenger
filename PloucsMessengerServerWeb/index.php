@@ -168,11 +168,13 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 				break;
 			case "msg":
 				$users = getUsers();
-				foreach ($users as $u)
-					sendCMDTo("msg", $u, "msg:" . $clientID . ": " . $cmd[1]);
+				$msg = implode(":", array_slice($cmd, 1));
+				foreach ($users as $u) 
+					sendCMDTo("msg", $u, "msg:" . $clientID . ": " . $msg);
 				break;
 			case "pm":
-				sendCMDTo("pm", $cmd[1], "pm:" . $clientID . ": " . $cmd[2]);
+				$msg = implode(":", array_slice($cmd, 2));
+				sendCMDTo("pm", $cmd[1], "pm:" . $clientID . ": " . $msg);
 				break;
 			default:
 				echo "NO MATCHING CMD FOR '". $cmd[0] . "'";

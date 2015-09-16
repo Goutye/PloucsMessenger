@@ -242,7 +242,7 @@ void MainWindow::newMessage(QString data)
 {
     qDebug() << "Message received: " + data;
     middle->moveCursor(QTextCursor::End);
-    middle->insertPlainText("\n" + data);
+    middle->insertHtml("<br />" + data);
     middle->moveCursor(QTextCursor::End);
 }
 

@@ -88,7 +88,9 @@ void SocketClient::replyFinished(QNetworkReply* reply)
             if (prefix.compare("msg") == 0)
             {
                 QStringList sl = s.split(":");
-                s = users.value(sl.at(0).toInt()) + ":" + sl.at(1);
+                s = users.value(sl.at(0).toInt());
+                for (QStringList::iterator it = ++sl.begin(); it < sl.end(); it++)
+                    s += ":" + *it;
                 qDebug() << s;
                 emit newMessage(s);
             }
@@ -97,7 +99,9 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                 qDebug() << s;
                 QStringList sl = s.split(":");
                 int target = sl.at(0).toInt();
-                s = users.value(target) + ":" + sl.at(1);
+                s = users.value(target);
+                for (QStringList::iterator it = ++sl.begin(); it < sl.end(); it++)
+                    s += ":" + *it;
                 emit newMessage(s, target);
             }
             else if (prefix.compare("con") == 0)
