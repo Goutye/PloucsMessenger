@@ -108,7 +108,6 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 				if ($passwordOK) {
 					//cookie own id
 					setcookie("id", $id . "", 0);
-					echo "OK";
 
 					//Add to the connected users list
 					//$query = "INSERT INTO ploucs_connected VALUES('". $id ."', CURRENT_TIMESTAMP())";
@@ -126,17 +125,17 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 						$req->execute(array('id' => $id));
 
 						//Get a list of connected users
-						$list = "list:"
+						$list = "list:";
 						$req = $db->prepare("SELECT userId, pseudo FROM ploucs_connected, ploucs_users WHERE userId = id AND userId != :id");
 						$req->execute(array('id' => $id));
 						while($rep = $req->fetch(PDO::FETCH_OBJ)) {
 							if ($list == "list:") {
-								$list .= rep->userId. ":" .rep->pseudo;
+								$list .= $rep->userId. ":" .$rep->pseudo;
 							} else {
-								$list .= ";" .rep->userId. ":" .rep->pseudo;
+								$list .= ";" .$rep->userId. ":" .$rep->pseudo;
 							}
 						}
-						sendCMDTo("list", $id, $list);
+						echo $list . "\n";
 					}catch(PDOException $e) {
 						echo $query . ": " .$e->getMessage();
 						return;
@@ -168,7 +167,6 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 				echo "EXIT";
 				break;
 			case "msg":
-			echo $cmdFull;
 				$users = getUsers();
 				foreach ($users as $u)
 					sendCMDTo("msg", $u, "msg:" . $clientID . ": " . $cmd[1]);
@@ -196,11 +194,15 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 				//Get the msg from the stack
 				$req = $db->prepare("SELECT msg FROM ploucs_messages WHERE toId = :id ORDER BY date"); 
 				$req->execute(array('id' => $clientID));
+				$msg = "";
 				while($rep = $req->fetch(PDO::FETCH_OBJ)) {
-					echo $rep->msg . "\n";
+					$msg .= htmlspecialchars_decode($rep->msg, ENT_QUOTES) . "\n";
 				}
-				$req = $db->prepare("DELETE FROM ploucs_messages WHERE toId = :id");
-				$req->execute(array('id' => $clientID));
+				$reqDel = $db->prepare("DELETE FROM ploucs_messages WHERE toId = :id");
+				$reqDel->execute(array('id' => $clientID));
+
+				if ($req->rowCount() == $reqDel->rowCount())
+					echo $msg;
 
 				//Delete the users who are disconnected by time-out.
 				$req = $db->query("SELECT userId FROM ploucs_connected WHERE last_date < CURRENT_TIMESTAMP() - INTERVAL 10 SECOND");
