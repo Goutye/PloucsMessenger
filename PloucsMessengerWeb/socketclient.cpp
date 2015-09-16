@@ -44,12 +44,11 @@ void SocketClient::start(QString pseudo, QString password)
 
 void SocketClient::connected()
 {
-    qDebug() << "Connected!";
+    qDebug() << "Connected to the server! Login...";
     write(QString("con:" + pseudo + ":" + password).toUtf8());
     password = "";
     timerPing = new QTimer;
     connect(timerPing, SIGNAL(timeout()), this, SLOT(ping()));
-    timerPing->start(1000);
 }
 
 void SocketClient::disconnected()
@@ -64,11 +63,13 @@ void SocketClient::replyFinished(QNetworkReply* reply)
 
     while((s = QString(reply->readLine())) > 0 )
     {
-        if (s.compare("NO") == 0 || s.compare("OK") == 0) {
+        if (s.compare("NO") == 0) {
             qDebug() << s;
         }
+        else if (s.compare("OK") == 0) {
+            timerPing->start(1000);
+        }
         else if (s.compare("BAD_PWD") == 0) {
-            timerPing->stop();
             qDebug() << s;
             emit wrongPassword("Wrong combination of pseudo and password.");
             return;
@@ -139,7 +140,7 @@ void SocketClient::ping()
         "application/x-www-form-urlencoded");
 
     manager->get(request);
-    timerPing->start(1000);
+    timerPing->start(100);  // @todo Adaptative ping
 }
 
 void SocketClient::post(QString data)
