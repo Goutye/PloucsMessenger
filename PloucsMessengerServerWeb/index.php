@@ -3,6 +3,9 @@ ini_set('display_errors', 'On');
 error_reporting(E_ALL);
 
 include_once("../includes/db.php");
+//$db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+//$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+//Qt => sha512 crypting pwd
 
 setcookie("pass", "ok", 0);
 
@@ -54,12 +57,12 @@ function getConnectedUsers() {
 
 if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 	if (isset($_COOKIE['id']))
-		$clientID = htmlspecialchars($_COOKIE['id']);
+		$clientID = htmlspecialchars($_COOKIE['id'], ENT_QUOTES, 'UTF-8');
 	else
 		$clientID = "";
 
 	if (isset($_POST['cmd'])) {
-		$cmdFull = htmlspecialchars($_POST['cmd']);
+		$cmdFull = htmlspecialchars($_POST['cmd'], ENT_QUOTES, 'UTF-8');
 		$cmd = explode(':', $cmdFull);
 
 		//evaluate cmd
