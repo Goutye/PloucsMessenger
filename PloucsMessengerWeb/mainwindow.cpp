@@ -12,8 +12,8 @@
 
 #define LABEL_BACKGROUND_ACTIVE_COLOR "#BBBBBB"
 #define LABEL_BACKGROUND_INACTIVE_COLOR "#888888"
-#define TEXTEDIT_BACKGROUND_ACTIVE_COLOR "#EEEEEE"
-#define TEXTEDIT_BACKGROUND_INACTIVE_COLOR "#CCCCCC"
+#define TEXTEDIT_BACKGROUND_ACTIVE_COLOR "#DDDDDD"
+#define TEXTEDIT_BACKGROUND_INACTIVE_COLOR "#BBBBBB"
 #define DEFAULT_WIDTH 200
 
 MainWindow::MainWindow(QWidget *parent)
@@ -30,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, SIGNAL(post(QString,int)), socket, SLOT(post(QString,int)));
     connect(socket, SIGNAL(wrongPassword(QString)), this, SLOT(connectionUser(QString)));
     connect(this, SIGNAL(disconnectionUser()), socket, SLOT(disconnected()));
+    connect(socket, SIGNAL(isConnected()), this, SLOT(isConnected()));
+    connect(socket, SIGNAL(isDisconnected()), this, SLOT(isDisconnected()));
 
     window = new QWidget;
 
@@ -41,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     splitter = new QSplitter;
     left = new QTextEdit();
-    left->setDisabled(true);
+    left->setReadOnly(true);
     leftLabel = new QLabel("Offline");
     leftLabel->setAlignment(Qt::AlignCenter);
     leftLabel->setFixedHeight(30);
@@ -49,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
     left->setStyleSheet(QString("QTextEdit { background-color: ") + TEXTEDIT_BACKGROUND_INACTIVE_COLOR + "; }");
     chats.insert(0,qMakePair(leftLabel, left));
     middle = new QTextEdit();
-    middle->setDisabled(true);
+    middle->setReadOnly(true);
     middleLabel = new QLabel("Plouc's");
     middleLabel->setAlignment(Qt::AlignCenter);
     middleLabel->setFixedHeight(30);
@@ -57,7 +59,7 @@ MainWindow::MainWindow(QWidget *parent)
     middle->setStyleSheet(QString("QTextEdit { background-color: ") + TEXTEDIT_BACKGROUND_ACTIVE_COLOR + "; }");
     chats.insert(1,qMakePair(middleLabel, middle));
     right = new QTextEdit();
-    right->setDisabled(true);
+    right->setReadOnly(true);
     rightLabel = new QLabel("Offline");
     rightLabel->setAlignment(Qt::AlignCenter);
     rightLabel->setFixedHeight(30);
@@ -167,7 +169,19 @@ void MainWindow::connectionUser(QString error)
         }
     } while(pseudo.isEmpty());
 
+    inputMsg->setFocus();
     socket->start(pseudo, password);
+}
+
+void MainWindow::isConnected()
+{
+    userIsDisconnected = false;
+}
+
+void MainWindow::isDisconnected()
+{
+    userIsDisconnected = true;
+    QTimer::singleShot(0, this, SLOT(close()));
 }
 
 void MainWindow::connection(int id, QString pseudo)
@@ -229,6 +243,7 @@ void MainWindow::newMessage(QString data)
     qDebug() << "Message received: " + data;
     middle->moveCursor(QTextCursor::End);
     middle->insertPlainText("\n" + data);
+    middle->moveCursor(QTextCursor::End);
 }
 
 void MainWindow::newMessage(QString data, int id)
@@ -237,15 +252,19 @@ void MainWindow::newMessage(QString data, int id)
     if (id == idLeft) {
         left->moveCursor(QTextCursor::End);
         left->insertPlainText("\n" + data);
+        left->moveCursor(QTextCursor::End);
     }
     else if (id == idRight) {
         right->moveCursor(QTextCursor::End);
         right->insertPlainText("\n" + data);
+        right->moveCursor(QTextCursor::End);
     }
 }
 
 void MainWindow::post()
 {
+    if (inputMsg->text().isEmpty())
+        return;
     if (idCurrent == 0) {
         emit post(inputMsg->text(), idLeft);
         newMessage(pseudo + ": " + inputMsg->text(), idLeft);
@@ -302,6 +321,12 @@ void MainWindow::mouseMoveEvent(QMouseEvent* event)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    emit disconnectionUser();
-    event->accept();
+    if (userIsDisconnected) {
+        qDebug() << "ACCEPTED";
+        event->accept();
+    } else {
+        qDebug() << "IGNORE";
+        emit disconnectionUser();
+        event->ignore();
+    }
 }

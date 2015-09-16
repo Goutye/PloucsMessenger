@@ -67,7 +67,12 @@ void SocketClient::replyFinished(QNetworkReply* reply)
             qDebug() << s;
         }
         else if (s.compare("OK") == 0) {
-            timerPing->start(1000);
+
+        }
+        else if (s.compare("EXIT") == 0) {
+            qDebug() << s;
+            timerPing->stop();
+            emit isDisconnected();
         }
         else if (s.compare("BAD_PWD") == 0) {
             qDebug() << s;
@@ -117,6 +122,11 @@ void SocketClient::replyFinished(QNetworkReply* reply)
             }
             else if (prefix.compare("list") == 0)
             {
+                timerPing->start(100);
+                qDebug() << s;
+                emit isConnected();
+                if (s.isEmpty())
+                    return;
                 QStringList users = s.split(";");
                 for (QStringList::iterator it = users.begin(); it != users.end(); ++it)
                 {
@@ -145,12 +155,12 @@ void SocketClient::ping()
 
 void SocketClient::post(QString data)
 {
-    write(QString("msg:" + data).toLatin1());
+    write(QString("msg:" + data).toUtf8());
 }
 
 void SocketClient::post(QString data, int id)
 {
-    write(QString("pm:%1:" + data).arg(id).toLatin1());
+    write(QString("pm:%1:" + data).arg(id).toUtf8());
 }
 
 bool SocketClient::write(QByteArray data)
@@ -164,7 +174,7 @@ bool SocketClient::write(QByteArray data)
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader,
         "application/x-www-form-urlencoded");
-
+    request.setRawHeader("Accept-Charset", "utf-8");
     manager->post(request, postData.toString(QUrl::FullyEncoded).toUtf8());
     return true;
 }

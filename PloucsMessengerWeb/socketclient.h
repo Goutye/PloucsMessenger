@@ -26,6 +26,8 @@ signals:
     void disconnection(int id);
     void newMessage(QString data);
     void newMessage(QString data, int id);
+    void isConnected();
+    void isDisconnected();
 
 public slots:
     void post(QString data);

@@ -29,6 +29,8 @@ public slots:
     void nextChat();
     void prevChat();
     void connectionUser(QString error = 0);
+    void isConnected();
+    void isDisconnected();
 
 signals:
     void post(QString data);
@@ -57,6 +59,7 @@ private:
 
     QString pseudo;
     QMap< int, QPair<QLabel*, QTextEdit*> > chats;
+    bool userIsDisconnected = true;
 
     int  m_nMouseClick_X_Coordinate = 0;
     int  m_nMouseClick_Y_Coordinate = 0;

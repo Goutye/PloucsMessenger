@@ -2,9 +2,9 @@
 ini_set('display_errors', 'On');
 error_reporting(E_ALL);
 
+header('Content-Type: text/html; charset=utf-8');
+
 include_once("../includes/db.php");
-//$db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-//$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 //Qt => sha512 crypting pwd
 
 setcookie("pass", "ok", 0);
@@ -63,6 +63,7 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 
 	if (isset($_POST['cmd'])) {
 		$cmdFull = htmlspecialchars($_POST['cmd'], ENT_QUOTES, 'UTF-8');
+		$cmdFull = substr($cmdFull, 0, -1);
 		$cmd = explode(':', $cmdFull);
 
 		//evaluate cmd
@@ -111,10 +112,31 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 
 					//Add to the connected users list
 					//$query = "INSERT INTO ploucs_connected VALUES('". $id ."', CURRENT_TIMESTAMP())";
-					$query = "INSERT INTO ploucs_connected VALUES(:id, CURRENT_TIMESTAMP())";
+					$query;
 					try {
+						$req = $db->prepare("SELECT * FROM ploucs_connected WHERE userId = :id");
+						$req->execute(array('id' => $id));
+						if ($req->rowCount() > 0) {
+							$query = "UPDATE ploucs_connected SET last_date = CURRENT_TIMESTAMP() WHERE userId = :id";
+						}
+						else {
+							$query = "INSERT INTO ploucs_connected VALUES(:id, CURRENT_TIMESTAMP())";
+						}
 						$req = $db->prepare($query);
 						$req->execute(array('id' => $id));
+
+						//Get a list of connected users
+						$list = "list:"
+						$req = $db->prepare("SELECT userId, pseudo FROM ploucs_connected, ploucs_users WHERE userId = id AND userId != :id");
+						$req->execute(array('id' => $id));
+						while($rep = $req->fetch(PDO::FETCH_OBJ)) {
+							if ($list == "list:") {
+								$list .= rep->userId. ":" .rep->pseudo;
+							} else {
+								$list .= ";" .rep->userId. ":" .rep->pseudo;
+							}
+						}
+						sendCMDTo("list", $id, $list);
 					}catch(PDOException $e) {
 						echo $query . ": " .$e->getMessage();
 						return;
@@ -143,8 +165,10 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 				foreach ($users as $u)
 					sendCMDTo("dcn", $u, "dcn:" . $clientID);
 				unset($_COOKIE['id']);
+				echo "EXIT";
 				break;
 			case "msg":
+			echo $cmdFull;
 				$users = getUsers();
 				foreach ($users as $u)
 					sendCMDTo("msg", $u, "msg:" . $clientID . ": " . $cmd[1]);
@@ -153,7 +177,7 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 				sendCMDTo("pm", $cmd[1], "pm:" . $clientID . ": " . $cmd[2]);
 				break;
 			default:
-				echo "NO MATCHING CMD FOR '". $cmd[0] ."'";
+				echo "NO MATCHING CMD FOR '". $cmd[0] . "'";
 		}		
 	}
 	else {
