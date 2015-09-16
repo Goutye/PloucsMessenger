@@ -8,9 +8,12 @@ setcookie("pass", "ok", 0);
 
 function sendCMDTo($cmd, $idUser, $msg) {
 	global $db;
-	$query = "INSERT INTO ploucs_messages VALUES('". $idUser ."', '". $msg ."', '". $cmd ."', CURRENT_TIMESTAMP())";
+	$query = "INSERT INTO ploucs_messages VALUES(:idUser, :msg, :cmd, CURRENT_TIMESTAMP())";
+	//$query = "INSERT INTO ploucs_messages VALUES('". $idUser ."', '". $msg ."', '". $cmd ."', CURRENT_TIMESTAMP())";
+	//60174/how-can-i-prevent-sql-injection-in-php
 	try {
-		$req = $db->exec($query);
+		$req = $db->prepare($query);
+		$req->execute(array('idUser' => $idUser, 'msg' => $msg, 'cmd' => $cmd));
 	} catch(PDOException $e) {
 		echo $query. ": " .$e->getMessage();
 		return 1;
@@ -64,7 +67,9 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 			case "con":
 				//Get the user with the pseudo $cmd[1]
 				try {
-					$req = $db->query("SELECT * FROM ploucs_users WHERE pseudo = '".$cmd[1]."'");
+					//$req = $db->query("SELECT * FROM ploucs_users WHERE pseudo = '".$cmd[1]."'");
+					$req = $db->prepare("SELECT * FROM ploucs_users WHERE pseudo = :pseudo");
+					$req->execute(array('pseudo' => $cmd[1]));
 
 					while($rep = $req->fetch(PDO::FETCH_OBJ)) {
 						$id = $rep->id;
@@ -81,8 +86,10 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 				//If no pwd
 				if ($pwd == "" and $cmd[2] != "") {
 					try {
-						$query = "UPDATE ploucs_users SET pwd = '". $loginPwd ."' WHERE id = '". $id ."'";
-						$req = $db->exec($query);
+						//$query = "UPDATE ploucs_users SET pwd = '". $loginPwd ."' WHERE id = '". $id ."'";
+						$query = "UPDATE ploucs_users SET pwd = :pwd WHERE id = :id";
+						$req = $db->prepare($query);
+						$req->execute(array('pwd' => $loginPwd, 'id' => $id));
 					} catch(PDOException $e) {
 						echo $query. ": " .$e->getMessage();
 						return;
@@ -100,9 +107,11 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 					echo "OK";
 
 					//Add to the connected users list
-					$query = "INSERT INTO ploucs_connected VALUES('". $id ."', CURRENT_TIMESTAMP())";
+					//$query = "INSERT INTO ploucs_connected VALUES('". $id ."', CURRENT_TIMESTAMP())";
+					$query = "INSERT INTO ploucs_connected VALUES(:id, CURRENT_TIMESTAMP())";
 					try {
-						$req = $db->exec($query);
+						$req = $db->prepare($query);
+						$req->execute(array('id' => $id));
 					}catch(PDOException $e) {
 						echo $query . ": " .$e->getMessage();
 						return;
@@ -118,16 +127,19 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 				}
 				break;
 			case "dcn":
-				$query = "DELETE FROM ploucs_connected WHERE userId = '". $clientID ."'";
+				//$query = "DELETE FROM ploucs_connected WHERE userId = '". $clientID ."'";
+				$query = "DELETE FROM ploucs_connected WHERE userId = :id";
+
 				try {
-					$req = $db->exec($query);
+					$req = $db->prepare($query);
+					$req->execute(array('id' => $clientID));
 				}catch(PDOException $e) {
 					echo $query. ": " .$e->getMessage();
 				}
 				$users = getConnectedUsers();
 				foreach ($users as $u)
 					sendCMDTo("dcn", $u, "dcn:" . $clientID);
-				unset($_COOKIE['mycookiename']);
+				unset($_COOKIE['id']);
 				break;
 			case "msg":
 				$users = getUsers();
@@ -147,16 +159,21 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 			echo "FAIL: NO USER ID FOUND! Why did you eat the cookie? :/";
 		} else {
 			//Update the last_date we saw the user
-			$query = "UPDATE ploucs_connected SET last_date = CURRENT_TIMESTAMP() WHERE userId = '". $clientID ."'";
+			//$query = "UPDATE ploucs_connected SET last_date = CURRENT_TIMESTAMP() WHERE userId = '". $clientID ."'";
+			$query = "UPDATE ploucs_connected SET last_date = CURRENT_TIMESTAMP() WHERE userId = :id";
+
 			try {
-				$req = $db->exec($query);
+				$req = $db->prepare($query);
+				$req->execute(array('id' => $clientID));
 
 				//Get the msg from the stack
-				$req = $db->query("SELECT msg FROM ploucs_messages WHERE toId = '". $clientID ."' ORDER BY date"); 
+				$req = $db->prepare("SELECT msg FROM ploucs_messages WHERE toId = :id ORDER BY date"); 
+				$req->execute(array('id' => $clientID));
 				while($rep = $req->fetch(PDO::FETCH_OBJ)) {
 					echo $rep->msg . "\n";
 				}
-				$db->exec("DELETE FROM ploucs_messages WHERE toId = '". $clientID . "'");
+				$req = $db->prepare("DELETE FROM ploucs_messages WHERE toId = :id");
+				$req->execute(array('id' => $clientID));
 
 				//Delete the users who are disconnected by time-out.
 				$req = $db->query("SELECT userId FROM ploucs_connected WHERE last_date < CURRENT_TIMESTAMP() - INTERVAL 10 SECOND");
