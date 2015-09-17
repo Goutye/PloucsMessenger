@@ -63,6 +63,7 @@ private:
 
     int  m_nMouseClick_X_Coordinate = 0;
     int  m_nMouseClick_Y_Coordinate = 0;
+    bool tokenConnectionFailed = false;
 };
 
 #endif // MAINWINDOW_H

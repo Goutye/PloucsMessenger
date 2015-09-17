@@ -4,6 +4,7 @@
 #include <QNetworkCookieJar>
 #include <QCoreApplication>
 #include <QTime>
+#include <QFile>
 
 SocketClient::SocketClient(QObject *parent) : QObject(parent)
 {
@@ -27,10 +28,11 @@ void SocketClient::delay( int millisecondsToWait )
     }
 }
 
-void SocketClient::start(QString pseudo, QString password)
+void SocketClient::start(QString pseudo, QString password, bool autoLogin)
 {
     this->pseudo = pseudo;
     this->password = password;
+    this->autoLogin = autoLogin;
 
     qDebug() << "Connecting...";
 
@@ -44,8 +46,13 @@ void SocketClient::start(QString pseudo, QString password)
 
 void SocketClient::connected()
 {
-    qDebug() << "Connected to the server! Login...";
-    write(QString("con:" + pseudo + ":" + password).toUtf8());
+    qDebug() << "Connected to the server! Login..." + password;
+    QString cmd("con:" + pseudo + ":" + password);
+
+    if (autoLogin)
+        cmd += ":true";
+
+    write(cmd.toUtf8());
     password = "";
     timerPing = new QTimer;
     connect(timerPing, SIGNAL(timeout()), this, SLOT(ping()));
@@ -66,9 +73,6 @@ void SocketClient::replyFinished(QNetworkReply* reply)
         if (s.compare("NO") == 0) {
             qDebug() << s;
         }
-        else if (s.compare("OK") == 0) {
-
-        }
         else if (s.compare("EXIT") == 0) {
             qDebug() << s;
             timerPing->stop();
@@ -77,6 +81,11 @@ void SocketClient::replyFinished(QNetworkReply* reply)
         else if (s.compare("BAD_PWD") == 0) {
             qDebug() << s;
             emit wrongPassword("Wrong combination of pseudo and password.");
+            return;
+        }
+        else if (s.compare("EXPIRED_TOKEN") == 0) {
+            qDebug() << s;
+            emit wrongPassword("Auto-login's token expired.");
             return;
         }
         else {
@@ -93,6 +102,11 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                     s += ":" + *it;
                 qDebug() << s;
                 emit newMessage(s);
+            }
+            else if (prefix.compare("token") == 0)
+            {
+                qDebug() << s;
+                saveToken(s);
             }
             else if (prefix.compare("pm") == 0)
             {
@@ -127,7 +141,7 @@ void SocketClient::replyFinished(QNetworkReply* reply)
             else if (prefix.compare("list") == 0)
             {
                 timerPing->start(100);
-                qDebug() << s;
+                qDebug() << "[List received]" << s;
                 emit isConnected();
                 if (s.isEmpty())
                     return;
@@ -193,4 +207,13 @@ void SocketClient::removeUser(int id)
 {
     users.remove(id);
     qDebug() << QString("User removed: %1").arg(id);
+}
+
+void SocketClient::saveToken(QString s)
+{
+    QFile file(QDir::currentPath() + tokenFile);
+    file.open(QIODevice::WriteOnly);
+    file.write((pseudo + "\n").toStdString().c_str());
+    file.write(s.toStdString().c_str());
+    file.close();
 }

@@ -9,6 +9,9 @@
 #include <QVector>
 #include <QUrl>
 #include <QTimer>
+#include <QDir>
+
+#define tokenFile "/resources/token.dat"
 
 class SocketClient : public QObject
 {
@@ -17,7 +20,7 @@ public:
     explicit SocketClient(QObject *parent = 0);
     ~SocketClient();
     void delay( int millisecondsToWait );
-    void start(QString pseudo, QString password);
+    void start(QString pseudo, QString password, bool autoLogin = false);
     bool write(QByteArray data);
 
 signals:
@@ -38,6 +41,7 @@ public slots:
 private slots:
     void ping();
     void replyFinished(QNetworkReply* reply);
+    void saveToken(QString s);
 
 private:
     void addUser(int id, QString pseudo);
@@ -45,6 +49,7 @@ private:
 
     QString pseudo;
     QString password;
+    bool autoLogin;
     QNetworkAccessManager *manager;
     QUrl url;
     QMap<int, QString> users;

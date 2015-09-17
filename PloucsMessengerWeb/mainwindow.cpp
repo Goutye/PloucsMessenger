@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QSizeGrip>
 #include <QDebug>
 #include <QShortcut>
 #include <QKeySequence>
@@ -9,6 +8,10 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <time.h>
+#include <QCryptographicHash>
+#include <QCheckBox>
+
+#include "maintoolbar.h"
 
 #define LABEL_BACKGROUND_ACTIVE_COLOR "#BBBBBB"
 #define LABEL_BACKGROUND_INACTIVE_COLOR "#888888"
@@ -37,6 +40,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     setWindowFlags(Qt::FramelessWindowHint);
 
+    MainToolBar *tb = new MainToolBar(this);
+    addToolBar(Qt::RightToolBarArea, tb);
 
     QVBoxLayout *vLayout = new QVBoxLayout;
     vLayout->setContentsMargins(2,2,2,2);
@@ -107,11 +112,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     inputMsg = new QLineEdit();
     inputMsg->setFixedHeight(20);
-
     vLayout->addWidget(inputMsg, 1);
-    QSizeGrip *sizeGrip = new QSizeGrip(this);
-    sizeGrip->setFixedHeight(5);
-    vLayout->addWidget(sizeGrip, 0, Qt::AlignBottom | Qt::AlignRight);
 
     window->setLayout(vLayout);
 
@@ -140,37 +141,53 @@ void MainWindow::connectionUser(QString error)
     if (error.isEmpty())
         error = "Connection to Ploucs messenger";
 
-    QDialog dialog(this);
-    QFormLayout form(&dialog);
-    QLabel *dialogLabel = new QLabel(error);
-    form.addRow(dialogLabel);
+    QFile file(QDir::currentPath() + tokenFile);
+    if ((!tokenConnectionFailed) && file.open(QIODevice::ReadOnly)) {
+        pseudo = QString(file.readLine());
+        pseudo.remove(pseudo.size() - 1, 1);
+        inputMsg->setFocus();
+        socket->start(pseudo, QString(file.readLine()));
+        tokenConnectionFailed = true;
+    }
+    else {
+        QDialog dialog(this);
+        QFormLayout form(&dialog);
+        QLabel *dialogLabel = new QLabel(error);
+        form.addRow(dialogLabel);
 
-    QLineEdit *lineEditPseudo = new QLineEdit(&dialog);
-    form.addRow("Pseudo:", lineEditPseudo);
-    QLineEdit *lineEditPassword = new QLineEdit(&dialog);
-    lineEditPassword->setEchoMode(QLineEdit::Password);
-    form.addRow("Password:", lineEditPassword);
+        QLineEdit *lineEditPseudo = new QLineEdit(&dialog);
+        form.addRow("Pseudo:", lineEditPseudo);
+        QLineEdit *lineEditPassword = new QLineEdit(&dialog);
+        lineEditPassword->setEchoMode(QLineEdit::Password);
+        form.addRow("Password:", lineEditPassword);
+        QCheckBox *checkBox = new QCheckBox(&dialog);
+        checkBox->setChecked(true);
+        form.addRow("Auto-login:", checkBox);
 
-    QDialogButtonBox buttonBox(QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
-    form.addRow(&buttonBox);
-    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    QString password;
+        QDialogButtonBox buttonBox(QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
+        form.addRow(&buttonBox);
+        QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+        QString password;
 
-    do {
-        if (dialog.exec() == QDialog::Accepted) {
-            pseudo = lineEditPseudo->text();
-            password = lineEditPassword->text();
-            if (pseudo.isEmpty()) {
-                dialogLabel->setText("Pseudo field was empty.");
+        do {
+            if (dialog.exec() == QDialog::Accepted) {
+                pseudo = lineEditPseudo->text();
+                password = lineEditPassword->text();
+                if (pseudo.isEmpty()) {
+                    dialogLabel->setText("Pseudo field was empty.");
+                }
+            } else {
+                QTimer::singleShot(0, this, SLOT(close()));
+                return;
             }
-        } else {
-            QTimer::singleShot(0, this, SLOT(close()));
-            return;
-        }
-    } while(pseudo.isEmpty());
+        } while(pseudo.isEmpty());
 
-    inputMsg->setFocus();
-    socket->start(pseudo, password);
+        QCryptographicHash hash(QCryptographicHash::Sha3_512);
+        hash.addData(password.toStdString().c_str(), password.length());
+        QString result(hash.result());
+        result.replace(":",";");
+        socket->start(pseudo, result, checkBox->isChecked());
+    }
 }
 
 void MainWindow::isConnected()
@@ -251,12 +268,12 @@ void MainWindow::newMessage(QString data, int id)
     qDebug() << "Message received: " + data + " " + id;
     if (id == idLeft) {
         left->moveCursor(QTextCursor::End);
-        left->insertPlainText("\n" + data);
+        left->insertHtml("<br />" + data);
         left->moveCursor(QTextCursor::End);
     }
     else if (id == idRight) {
         right->moveCursor(QTextCursor::End);
-        right->insertPlainText("\n" + data);
+        right->insertHtml("<br />" + data);
         right->moveCursor(QTextCursor::End);
     }
 }

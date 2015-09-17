@@ -71,13 +71,15 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 			case "con":
 				//Get the user with the pseudo $cmd[1]
 				try {
-					//$req = $db->query("SELECT * FROM ploucs_users WHERE pseudo = '".$cmd[1]."'");
-					$req = $db->prepare("SELECT * FROM ploucs_users WHERE pseudo = :pseudo");
+					$req = $db->prepare("SELECT id, pwd, token, expiredDate < CURRENT_TIMESTAMP() as isExpired 
+											FROM ploucs_users WHERE pseudo = :pseudo");
 					$req->execute(array('pseudo' => $cmd[1]));
 
 					while($rep = $req->fetch(PDO::FETCH_OBJ)) {
 						$id = $rep->id;
 						$pwd = $rep->pwd;
+						$token = $rep->token;
+						$isExpired = $rep->isExpired;
 					}
 				} catch(PDOException $e) {
 					echo $query. ": " .$e->getMessage();
@@ -90,7 +92,6 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 				//If no pwd
 				if ($pwd == "" and $cmd[2] != "") {
 					try {
-						//$query = "UPDATE ploucs_users SET pwd = '". $loginPwd ."' WHERE id = '". $id ."'";
 						$query = "UPDATE ploucs_users SET pwd = :pwd WHERE id = :id";
 						$req = $db->prepare($query);
 						$req->execute(array('pwd' => $loginPwd, 'id' => $id));
@@ -102,7 +103,7 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 					$passwordOK = true;
 				} //If isset pwd
 				else {
-					$passwordOK = $pwd == $loginPwd;
+					$passwordOK = $pwd == $loginPwd || ($cmd[2] == $token && (!$isExpired));
 				}
 
 				if ($passwordOK) {
@@ -135,7 +136,16 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 								$list .= ";" .$rep->userId. ":" .$rep->pseudo;
 							}
 						}
+
+						//Token generation
+						if (count($cmd) == 4) {
+							$token = sha1(sha1(microtime()) . uniqid($cmd[1]));
+							$req = $db->prepare("UPDATE ploucs_users SET token = :token, expiredDate = (CURRENT_TIMESTAMP() + INTERVAL 15 DAY) WHERE id = :id");
+							$req->execute(array('token' => $token, 'id' => $id));
+							echo "token:" . $token . "\n";
+						}
 						echo $list . "\n";
+
 					}catch(PDOException $e) {
 						echo $query . ": " .$e->getMessage();
 						return;
@@ -147,7 +157,13 @@ if (isset($_COOKIE['pass']) && $_COOKIE['pass'] == "ok") {
 						sendCMDTo("con", $u, "con:". $id .":". $cmd[1]);
 				}
 				else {
-					echo "BAD_PWD";
+					if ($cmd[2] == $token){
+						echo "EXPIRED_TOKEN";
+						$req = $db->prepare("UPDATE ploucs_users SET token = '' WHERE id = :id");
+						$req->execute(array('id' => $id));
+					}
+					else
+						echo "BAD_PWD";
 				}
 				break;
 			case "dcn":
