@@ -28,7 +28,7 @@ void SocketClient::delay( int millisecondsToWait )
     }
 }
 
-bool SocketClient::checkUpdate()
+void SocketClient::checkUpdate()
 {
     QNetworkRequest request(QUrl("http://www.goutye.com/ploucs/md5.php"));
     request.setHeader(QNetworkRequest::ContentTypeHeader,
@@ -172,7 +172,7 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                 QByteArray hash = crypto.result().toHex();
                 qDebug() << QString(hash) + " " + s;
 
-                emit updateAvailable(QString(hash).compare(s) != 0);
+                emit updateAvailable(QString(hash).compare(s) != 0 || !QFile(QCoreApplication::applicationDirPath() + "/settings.exe").exists());
             }
             else
             {

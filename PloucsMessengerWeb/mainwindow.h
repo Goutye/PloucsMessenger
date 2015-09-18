@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QSplitter>
 #include <QTextEdit>
+#include <QTextBrowser>
 #include <QLabel>
 #include <QMouseEvent>
 #include "socketclient.h"
@@ -50,11 +51,11 @@ private slots:
 private:
     SocketClient *socket;
     QWidget *window;
-    QTextEdit *left;
+    QTextBrowser *left;
     QLabel *leftLabel;
-    QTextEdit *middle;
+    QTextBrowser *middle;
     QLabel *middleLabel;
-    QTextEdit *right;
+    QTextBrowser *right;
     QLabel *rightLabel;
     QLineEdit *inputMsg;
     QSplitter *splitter;

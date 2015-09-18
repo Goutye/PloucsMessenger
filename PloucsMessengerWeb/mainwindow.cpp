@@ -20,6 +20,8 @@
 #define TEXTEDIT_BACKGROUND_INACTIVE_COLOR "#BBBBBB"
 #define DEFAULT_WIDTH 200
 
+#define CHECK_UPDATE
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -28,7 +30,9 @@ MainWindow::MainWindow(QWidget *parent)
     socket = new SocketClient();
 
     connect(socket, SIGNAL(updateAvailable(bool)), this, SLOT(updateAvailable(bool)));
+#ifdef CHECK_UPDATE
     socket->checkUpdate();
+#endif
 
     connect(socket, SIGNAL(connection(int,QString)), this, SLOT(connection(int,QString)));
     connect(socket, SIGNAL(disconnection(int)), this, SLOT(disconnection(int)));
@@ -52,15 +56,17 @@ MainWindow::MainWindow(QWidget *parent)
     vLayout->setContentsMargins(2,2,2,2);
 
     splitter = new QSplitter;
-    left = new QTextEdit();
+    left = new QTextBrowser();
     left->setReadOnly(true);
+    left->setOpenExternalLinks(true);
     leftLabel = new QLabel("Offline");
     leftLabel->setAlignment(Qt::AlignCenter);
     leftLabel->setFixedHeight(30);
     leftLabel->setStyleSheet(QString("QLabel { background-color: ") + LABEL_BACKGROUND_INACTIVE_COLOR + "; }");
     left->setStyleSheet(QString("QTextEdit { background-color: ") + TEXTEDIT_BACKGROUND_INACTIVE_COLOR + "; }");
     chats.insert(0,qMakePair(leftLabel, left));
-    middle = new QTextEdit();
+    middle = new QTextBrowser();
+    middle->setOpenExternalLinks(true);
     middle->setReadOnly(true);
     middleLabel = new QLabel("Plouc's");
     middleLabel->setAlignment(Qt::AlignCenter);
@@ -68,7 +74,8 @@ MainWindow::MainWindow(QWidget *parent)
     middleLabel->setStyleSheet(QString("QLabel { background-color: ") + LABEL_BACKGROUND_ACTIVE_COLOR + "; }");
     middle->setStyleSheet(QString("QTextEdit { background-color: ") + TEXTEDIT_BACKGROUND_ACTIVE_COLOR + "; }");
     chats.insert(1,qMakePair(middleLabel, middle));
-    right = new QTextEdit();
+    right = new QTextBrowser();
+    right->setOpenExternalLinks(true);
     right->setReadOnly(true);
     rightLabel = new QLabel("Offline");
     rightLabel->setAlignment(Qt::AlignCenter);
@@ -133,6 +140,10 @@ MainWindow::MainWindow(QWidget *parent)
     window->setStyleSheet("background:transparent;");
     setWindowOpacity(0.9);
     resize(DEFAULT_WIDTH, height());
+
+#ifndef CHECK_UPDATE
+    connectionUser();
+#endif
 }
 
 MainWindow::~MainWindow()

@@ -22,7 +22,7 @@ public:
     void delay( int millisecondsToWait );
     void start(QString pseudo, QString password, bool autoLogin = false);
     bool write(QByteArray data);
-    bool checkUpdate();
+    void checkUpdate();
 
 signals:
     void connection(int id, QString pseudo);
