@@ -10,6 +10,7 @@
 #include <time.h>
 #include <QCryptographicHash>
 #include <QCheckBox>
+#include <QCoreApplication>
 
 #include "maintoolbar.h"
 
@@ -141,7 +142,7 @@ void MainWindow::connectionUser(QString error)
     if (error.isEmpty())
         error = "Connection to Ploucs messenger";
 
-    QFile file(QDir::currentPath() + tokenFile);
+    QFile file(QCoreApplication::applicationDirPath() + tokenFile);
     if ((!tokenConnectionFailed) && file.open(QIODevice::ReadOnly)) {
         pseudo = QString(file.readLine());
         pseudo.remove(pseudo.size() - 1, 1);

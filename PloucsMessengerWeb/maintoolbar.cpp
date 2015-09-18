@@ -8,6 +8,7 @@
 #include <QSettings>
 #include <QDebug>
 #include <QTimer>
+#include <QCoreApplication>
 
 #ifdef Q_OS_WIN
     #include <windows.h>
@@ -53,8 +54,8 @@ void MainToolBar::error(QProcess::ProcessError error)
 
 void MainToolBar::setStartup()
 {
-    qDebug() << QDir::currentPath() + "/settings.exe";
-    QString program = QDir::currentPath() + "/settings.exe";
+    qDebug() << QCoreApplication::applicationDirPath() + "/settings.exe";
+    QString program = QCoreApplication::applicationDirPath() + "/settings.exe";
 #ifdef Q_OS_WIN
     int result = (int)::ShellExecuteA(0, "open", program.toUtf8().constData(), "startup", 0, SW_SHOWNORMAL);
     if (SE_ERR_ACCESSDENIED == result)
@@ -67,7 +68,7 @@ void MainToolBar::setStartup()
         // error handling
     }
 #else
-    if (!QProcess::startDetached(exeFileName))
+    if (!QProcess::startDetached(program, "startup"))
     {
         // error handling
     }

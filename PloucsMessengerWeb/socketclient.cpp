@@ -211,7 +211,9 @@ void SocketClient::removeUser(int id)
 
 void SocketClient::saveToken(QString s)
 {
-    QFile file(QDir::currentPath() + tokenFile);
+    if (!QDir(QCoreApplication::applicationDirPath() + "/resources").exists())
+        QDir().mkdir(QCoreApplication::applicationDirPath() + "/resources");
+    QFile file(QCoreApplication::applicationDirPath() + tokenFile);
     file.open(QIODevice::WriteOnly);
     file.write((pseudo + "\n").toStdString().c_str());
     file.write(s.toStdString().c_str());
