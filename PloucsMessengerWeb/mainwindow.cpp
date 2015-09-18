@@ -26,6 +26,10 @@ MainWindow::MainWindow(QWidget *parent)
     qsrand(time(0));
 
     socket = new SocketClient();
+
+    connect(socket, SIGNAL(updateAvailable(bool)), this, SLOT(updateAvailable(bool)));
+    socket->checkUpdate();
+
     connect(socket, SIGNAL(connection(int,QString)), this, SLOT(connection(int,QString)));
     connect(socket, SIGNAL(disconnection(int)), this, SLOT(disconnection(int)));
     connect(socket, SIGNAL(newMessage(QString)), this, SLOT(newMessage(QString)));
@@ -129,12 +133,67 @@ MainWindow::MainWindow(QWidget *parent)
     window->setStyleSheet("background:transparent;");
     setWindowOpacity(0.9);
     resize(DEFAULT_WIDTH, height());
-    connectionUser();
 }
 
 MainWindow::~MainWindow()
 {
 
+}
+
+void MainWindow::updateAvailable(bool newUpdate)
+{
+    if (newUpdate) {
+        fd = new FileDownloader(QUrl("http://www.goutye.com/ploucs/PloucsMessenger.exe"), this);
+        connect(fd, SIGNAL(downloaded()), this, SLOT(updateSettingsApp()));
+    } else {
+        connectionUser();
+    }
+}
+
+void MainWindow::updateSettingsApp()
+{
+    disconnect(fd, SIGNAL(downloaded()), this, SLOT(updateSettingsApp()));
+    QFile filePMupdated(QCoreApplication::applicationFilePath() + ".update");
+    filePMupdated.open(QFile::WriteOnly);
+    filePMupdated.write(fd->downloadedData());
+    filePMupdated.close();
+    fd = new FileDownloader(QUrl("http://www.goutye.com/ploucs/settings.exe"), this);
+    connect(fd, SIGNAL(downloaded()), this, SLOT(updatePM()));
+}
+
+void MainWindow::updatePM()
+{
+    QString program = QCoreApplication::applicationDirPath() + "/settings.exe";
+    QFile fileSettingsupdated(QCoreApplication::applicationDirPath() + "/settings.exe.update");
+    fileSettingsupdated.open(QFile::WriteOnly);
+    fileSettingsupdated.write(fd->downloadedData());
+    fileSettingsupdated.close();
+
+    if (!QFile(program).exists() || QFile::remove(program)) {
+        QFile(QCoreApplication::applicationDirPath() + "/settings.exe.update").rename(QCoreApplication::applicationDirPath() + "/settings.exe");
+    }
+
+#ifdef Q_OS_WIN
+    int result = (int)::ShellExecuteA(0, "open", program.toUtf8().constData(), "update", 0, SW_SHOWNORMAL);
+    if (SE_ERR_ACCESSDENIED == result)
+    {
+        // Requesting elevation
+        result = (int)::ShellExecuteA(0, "runas", program.toUtf8().constData(), "update", 0, SW_SHOWNORMAL);
+    }
+    if (result <= 32)
+    {
+        // error handling
+    } else {
+        QTimer::singleShot(0, this, SLOT(close()));
+    }
+#else
+    if (!QProcess::startDetached(program, "PM"))
+    {
+        // error handling
+    } else {
+        QTimer::singleShot(0, this, SLOT(close()));
+    }
+#endif
 }
 
 void MainWindow::connectionUser(QString error)

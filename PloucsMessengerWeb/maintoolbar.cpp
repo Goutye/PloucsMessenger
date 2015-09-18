@@ -10,11 +10,6 @@
 #include <QTimer>
 #include <QCoreApplication>
 
-#ifdef Q_OS_WIN
-    #include <windows.h>
-    #include <shellapi.h>
-#endif
-
 MainToolBar::MainToolBar(QWidget *parent) : QToolBar(parent)
 {
     QToolButton *button = new QToolButton(this);

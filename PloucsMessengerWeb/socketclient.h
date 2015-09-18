@@ -22,6 +22,7 @@ public:
     void delay( int millisecondsToWait );
     void start(QString pseudo, QString password, bool autoLogin = false);
     bool write(QByteArray data);
+    bool checkUpdate();
 
 signals:
     void connection(int id, QString pseudo);
@@ -31,6 +32,7 @@ signals:
     void newMessage(QString data, int id);
     void isConnected();
     void isDisconnected();
+    void updateAvailable(bool);
 
 public slots:
     void post(QString data);

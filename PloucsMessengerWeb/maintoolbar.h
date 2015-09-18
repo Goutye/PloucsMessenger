@@ -5,6 +5,11 @@
 #include <QToolBar>
 #include <QProcess>
 
+#ifdef Q_OS_WIN
+    #include <windows.h>
+    #include <shellapi.h>
+#endif
+
 class MainToolBar : public QToolBar
 {
     Q_OBJECT

@@ -28,6 +28,14 @@ void SocketClient::delay( int millisecondsToWait )
     }
 }
 
+bool SocketClient::checkUpdate()
+{
+    QNetworkRequest request(QUrl("http://www.goutye.com/ploucs/md5.php"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader,
+        "application/x-www-form-urlencoded");
+    manager->get(request);
+}
+
 void SocketClient::start(QString pseudo, QString password, bool autoLogin)
 {
     this->pseudo = pseudo;
@@ -152,6 +160,19 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                     emit connection(infos.at(0).toInt(), infos.at(1));
                     addUser(infos.at(0).toInt(), infos.at(1));
                 }
+            }
+            else if (prefix.compare("md5") == 0)
+            {
+                QCryptographicHash crypto(QCryptographicHash::Md5);
+                QFile file(QCoreApplication::applicationFilePath());
+                file.open(QFile::ReadOnly);
+                while(!file.atEnd()){
+                  crypto.addData(file.read(8192));
+                }
+                QByteArray hash = crypto.result().toHex();
+                qDebug() << QString(hash) + " " + s;
+
+                emit updateAvailable(QString(hash).compare(s) != 0);
             }
             else
             {

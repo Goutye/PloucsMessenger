@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QMouseEvent>
 #include "socketclient.h"
+#include "filedownloader.h"
 
 class MainWindow : public QMainWindow
 {
@@ -31,6 +32,9 @@ public slots:
     void connectionUser(QString error = 0);
     void isConnected();
     void isDisconnected();
+    void updateAvailable(bool b);
+    void updateSettingsApp();
+    void updatePM();
 
 signals:
     void post(QString data);
@@ -39,6 +43,9 @@ signals:
 
 protected:
     void closeEvent(QCloseEvent *event);
+
+private slots:
+
 
 private:
     SocketClient *socket;
@@ -51,6 +58,7 @@ private:
     QLabel *rightLabel;
     QLineEdit *inputMsg;
     QSplitter *splitter;
+    FileDownloader *fd;
 
     int idLeft = 0;
     int idRight = 0;

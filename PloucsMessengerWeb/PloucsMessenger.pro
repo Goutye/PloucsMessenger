@@ -15,8 +15,10 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     socketclient.cpp \
-    maintoolbar.cpp
+    maintoolbar.cpp \
+    filedownloader.cpp
 
 HEADERS  += mainwindow.h \
     socketclient.h \
-    maintoolbar.h
+    maintoolbar.h \
+    filedownloader.h
