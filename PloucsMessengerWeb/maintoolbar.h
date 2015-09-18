@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QToolBar>
+#include <QProcess>
 
 class MainToolBar : public QToolBar
 {
@@ -14,6 +15,10 @@ public:
 signals:
 
 public slots:
+
+private slots:
+    void setStartup();
+    void error(QProcess::ProcessError error);
 };
 
 #endif // MAINTOOLBAR_H
