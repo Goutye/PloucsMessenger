@@ -105,7 +105,7 @@ void SocketClient::replyFinished(QNetworkReply* reply)
             if (prefix.compare("msg") == 0)
             {
                 QStringList sl = s.split(":");
-                s = users.value(sl.at(0).toInt());
+                s = onlineUsers.value(sl.at(0).toInt());
                 for (QStringList::iterator it = ++sl.begin(); it < sl.end(); it++)
                     s += ":" + *it;
                 qDebug() << s;
@@ -121,7 +121,7 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                 qDebug() << s;
                 QStringList sl = s.split(":");
                 int target = sl.at(0).toInt();
-                s = users.value(target);
+                s = onlineUsers.value(target);
                 for (QStringList::iterator it = ++sl.begin(); it < sl.end(); it++)
                     s += ":" + *it;
                 emit newMessage(s, target);
@@ -142,11 +142,21 @@ void SocketClient::replyFinished(QNetworkReply* reply)
             }
             else if (prefix.compare("dcn") == 0)
             {
-                emit newMessage(users.value(s.toInt()) + " is now Offline.");
+                emit newMessage(onlineUsers.value(s.toInt()) + " is now Offline.");
                 removeUser(s.toInt());
                 emit disconnection(s.toInt());
             }
             else if (prefix.compare("list") == 0)
+            {
+                qDebug() << "[List users received]" << s;
+                QStringList usersSL = s.split(";");
+                for (QStringList::iterator it = usersSL.begin(); it != usersSL.end(); ++it)
+                {
+                    QStringList infos = QString(*it).split(":");
+                    users.insert(infos.at(0).toInt(), infos.at(1));
+                }
+            }
+            else if (prefix.compare("listOnline") == 0)
             {
                 timerPing->start(100);
                 qDebug() << "[List received]" << s;
@@ -200,6 +210,7 @@ void SocketClient::post(QString data)
 void SocketClient::post(QString data, int id)
 {
     write(QString("pm:%1:" + data).arg(id).toUtf8());
+    emit newMessage(pseudo + ": "  + data, id);
 }
 
 bool SocketClient::write(QByteArray data)
@@ -220,13 +231,13 @@ bool SocketClient::write(QByteArray data)
 
 void SocketClient::addUser(int id, QString pseudo)
 {
-    users.insert(id, pseudo);
+    onlineUsers.insert(id, pseudo);
     qDebug() << QString("User added: %1 -> ").arg(id) + pseudo;
 }
 
 void SocketClient::removeUser(int id)
 {
-    users.remove(id);
+    onlineUsers.remove(id);
     qDebug() << QString("User removed: %1").arg(id);
 }
 
@@ -239,4 +250,15 @@ void SocketClient::saveToken(QString s)
     file.write((pseudo + "\n").toStdString().c_str());
     file.write(s.toStdString().c_str());
     file.close();
+}
+
+QMap<int, QString> SocketClient::getUsers()
+{
+    return users;
+}
+
+
+bool SocketClient::isOnline(int id)
+{
+    return onlineUsers.contains(id);
 }

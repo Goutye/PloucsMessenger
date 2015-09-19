@@ -17,9 +17,13 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     socketclient.cpp \
     maintoolbar.cpp \
-    filedownloader.cpp
+    filedownloader.cpp \
+    useraction.cpp \
+    displaychat.cpp
 
 HEADERS  += mainwindow.h \
     socketclient.h \
     maintoolbar.h \
-    filedownloader.h
+    filedownloader.h \
+    useraction.h \
+    displaychat.h

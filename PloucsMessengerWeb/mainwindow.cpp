@@ -12,15 +12,11 @@
 #include <QCheckBox>
 #include <QCoreApplication>
 
-#include "maintoolbar.h"
-
+#define DEFAULT_WIDTH 200
 #define LABEL_BACKGROUND_ACTIVE_COLOR "#BBBBBB"
 #define LABEL_BACKGROUND_INACTIVE_COLOR "#888888"
-#define TEXTEDIT_BACKGROUND_ACTIVE_COLOR "#DDDDDD"
-#define TEXTEDIT_BACKGROUND_INACTIVE_COLOR "#BBBBBB"
-#define DEFAULT_WIDTH 200
 
-#define CHECK_UPDATE
+//#define CHECK_UPDATE
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -32,12 +28,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(socket, SIGNAL(updateAvailable(bool)), this, SLOT(updateAvailable(bool)));
 #ifdef CHECK_UPDATE
     socket->checkUpdate();
+    qDebug() << "Ready for Release";
 #endif
 
     connect(socket, SIGNAL(connection(int,QString)), this, SLOT(connection(int,QString)));
     connect(socket, SIGNAL(disconnection(int)), this, SLOT(disconnection(int)));
-    connect(socket, SIGNAL(newMessage(QString)), this, SLOT(newMessage(QString)));
-    connect(socket, SIGNAL(newMessage(QString,int)), this, SLOT(newMessage(QString,int)));
     connect(this, SIGNAL(post(QString)), socket, SLOT(post(QString)));
     connect(this, SIGNAL(post(QString,int)), socket, SLOT(post(QString,int)));
     connect(socket, SIGNAL(wrongPassword(QString)), this, SLOT(connectionUser(QString)));
@@ -49,40 +44,36 @@ MainWindow::MainWindow(QWidget *parent)
 
     setWindowFlags(Qt::FramelessWindowHint);
 
-    MainToolBar *tb = new MainToolBar(this);
+    tb = new MainToolBar(this);
     addToolBar(Qt::RightToolBarArea, tb);
 
     QVBoxLayout *vLayout = new QVBoxLayout;
     vLayout->setContentsMargins(2,2,2,2);
 
     splitter = new QSplitter;
-    left = new QTextBrowser();
-    left->setReadOnly(true);
-    left->setOpenExternalLinks(true);
+    left = new DisplayChat();
     leftLabel = new QLabel("Offline");
     leftLabel->setAlignment(Qt::AlignCenter);
     leftLabel->setFixedHeight(30);
     leftLabel->setStyleSheet(QString("QLabel { background-color: ") + LABEL_BACKGROUND_INACTIVE_COLOR + "; }");
-    left->setStyleSheet(QString("QTextEdit { background-color: ") + TEXTEDIT_BACKGROUND_INACTIVE_COLOR + "; }");
     chats.insert(0,qMakePair(leftLabel, left));
-    middle = new QTextBrowser();
-    middle->setOpenExternalLinks(true);
-    middle->setReadOnly(true);
+    middle = new DisplayChat();
+    middle->setId(-1);
     middleLabel = new QLabel("Plouc's");
     middleLabel->setAlignment(Qt::AlignCenter);
     middleLabel->setFixedHeight(30);
     middleLabel->setStyleSheet(QString("QLabel { background-color: ") + LABEL_BACKGROUND_ACTIVE_COLOR + "; }");
-    middle->setStyleSheet(QString("QTextEdit { background-color: ") + TEXTEDIT_BACKGROUND_ACTIVE_COLOR + "; }");
     chats.insert(1,qMakePair(middleLabel, middle));
-    right = new QTextBrowser();
-    right->setOpenExternalLinks(true);
-    right->setReadOnly(true);
+    right = new DisplayChat();
     rightLabel = new QLabel("Offline");
     rightLabel->setAlignment(Qt::AlignCenter);
     rightLabel->setFixedHeight(30);
     rightLabel->setStyleSheet(QString("QLabel { background-color: ") + LABEL_BACKGROUND_INACTIVE_COLOR + "; }");
-    right->setStyleSheet(QString("QTextEdit { background-color: ") + TEXTEDIT_BACKGROUND_INACTIVE_COLOR + "; }");
     chats.insert(2,qMakePair(rightLabel, right));
+
+    connect(socket, SIGNAL(newMessage(QString)), middle, SLOT(newMessage(QString)));
+    connect(socket, SIGNAL(newMessage(QString,int)), left, SLOT(newMessage(QString,int)));
+    connect(socket, SIGNAL(newMessage(QString,int)), right, SLOT(newMessage(QString,int)));
 
     QVBoxLayout *vSplitLayout = new QVBoxLayout;
     vSplitLayout->addWidget(leftLabel);
@@ -115,9 +106,9 @@ MainWindow::MainWindow(QWidget *parent)
     splitter->addWidget(widgetV);
 
     QList<int> sizes;
-    sizes.append(0);
     sizes.append(1);
-    sizes.append(0);
+    sizes.append(1);
+    sizes.append(1);
     splitter->setSizes(sizes);
 
     vLayout->addWidget(splitter, 5);
@@ -143,6 +134,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 #ifndef CHECK_UPDATE
     connectionUser();
+    qDebug() << "\nDEBUG VERSION\n";
 #endif
 }
 
@@ -245,7 +237,7 @@ void MainWindow::connectionUser(QString error)
                 pseudo = lineEditPseudo->text();
                 password = lineEditPassword->text();
                 if (pseudo.isEmpty()) {
-                    dialogLabel->setText("Pseudo field was empty.");
+                    dialogLabel->setText("Le pseudo était vide.");
                 }
             } else {
                 QTimer::singleShot(0, this, SLOT(close()));
@@ -264,6 +256,16 @@ void MainWindow::connectionUser(QString error)
 void MainWindow::isConnected()
 {
     userIsDisconnected = false;
+
+    QMap<int, QString> usersMap = socket->getUsers();
+    UserAction *a;
+
+    for (QMap<int, QString>::iterator it = usersMap.begin(); it != usersMap.end(); ++it) {
+        a = new UserAction(it.value(), it.key());
+        connect(a, SIGNAL(triggered(int,QString)), this, SLOT(userPM(int,QString)));
+        tb->addUserToMenu(a);
+        users.append(a);
+    }
 }
 
 void MainWindow::isDisconnected()
@@ -274,78 +276,72 @@ void MainWindow::isDisconnected()
 
 void MainWindow::connection(int id, QString pseudo)
 {
+    DisplayChat *current;
     qDebug() << "Connection!";
-    if (idLeft == 0) {
-        leftLabel->setText(pseudo);
-        idLeft = id;
-        QList<int> sizes;
-        sizes.append(1);
-        sizes.append(1);
-        sizes.append(idRight != 0 ? 1 : 0);
-        splitter->setSizes(sizes);
-        int widthBlock = width() / (1 + (idRight != 0 ? 1 : 0));
-        resize(widthBlock * (2 + (idRight != 0 ? 1 : 0)), height());
+
+    //search if one is same id
+    for (QMap<int, QPair<QLabel*, DisplayChat*> >::iterator it = chats.begin(); it != chats.end(); ++it) {
+        current = it.value().second;
+
+        if (current->id() == id) {
+            current->setId(id);
+            return;
+        }
     }
-    else if (idRight == 0) {
-        rightLabel->setText(pseudo);
-        idRight = id;
-        QList<int> sizes;
-        sizes.append(idLeft != 0 ? 1 : 0);
-        sizes.append(1);
-        sizes.append(1);
-        splitter->setSizes(sizes);
-        int widthBlock = width() / (1 + (idLeft != 0 ? 1 : 0));
-        resize(widthBlock * (2 + (idLeft != 0 ? 1 : 0)), height());
+
+    //search for an available spot (Case tabs => create a tab)
+    for (QMap<int, QPair<QLabel*, DisplayChat*> >::iterator it = chats.begin(); it != chats.end(); ++it) {
+        current = it.value().second;
+
+        if (current->id() == 0) {
+            current->setId(id);
+            it.value().first->setText(pseudo);
+            return;
+        }
     }
 }
 
 void MainWindow::disconnection(int id)
 {
+    DisplayChat *current;
+    QLabel *currentLabel;
     qDebug() << "Disconnection!";
-    if (idLeft == id) {
-        idLeft = 0;
+
+    for (QMap<int, QPair<QLabel*, DisplayChat*> >::iterator it = chats.begin(); it != chats.end(); ++it) {
+        current = it.value().second;
+        currentLabel = it.value().first;
+
+        if (current->id() == id) {
+            current->setId(0);
+            currentLabel->setText("Offline");
+            return;
+        }
+    }
+}
+
+void MainWindow::userPM(int id, QString pseudo)
+{
+    if (left->id() == 0 && right->id() != id) {
+        QString label = pseudo;
+        if (!socket->isOnline(id)) label += " (Offline)";
+        leftLabel->setText(label);
+        left->setId(id);
+    }
+    else if (right->id() == 0 && left->id() != id) {
+        QString label = pseudo;
+        if (!socket->isOnline(id)) label += " (Offline)";
+        rightLabel->setText(label);
+        right->setId(id);
+    }
+    else if (left->id() == id) {
+        left->setId(0);
         leftLabel->setText("Offline");
-        QList<int> sizes;
-        sizes.append(0);
-        sizes.append(1);
-        sizes.append(idRight != 0 ? 1 : 0);
-        splitter->setSizes(sizes);
-        int widthBlock = width() / (2 + (idRight != 0 ? 1 : 0));
-        resize(widthBlock * (1 + (idRight != 0 ? 1 : 0)), height());
-    }
-    else if (idRight == id) {
-        idRight = 0;
+    } else if (right->id() == id) {
+        right->setId(0);
         rightLabel->setText("Offline");
-        QList<int> sizes;
-        sizes.append(idLeft != 0 ? 1 : 0);
-        sizes.append(1);
-        sizes.append(0);
-        splitter->setSizes(sizes);
-        int widthBlock = width() / (2 + (idLeft != 0 ? 1 : 0));
-        resize(widthBlock * (1 + (idLeft != 0 ? 1 : 0)), height());
     }
-}
-
-void MainWindow::newMessage(QString data)
-{
-    qDebug() << "Message received: " + data;
-    middle->moveCursor(QTextCursor::End);
-    middle->insertHtml("<br />" + data);
-    middle->moveCursor(QTextCursor::End);
-}
-
-void MainWindow::newMessage(QString data, int id)
-{
-    qDebug() << "Message received: " + data + " " + id;
-    if (id == idLeft) {
-        left->moveCursor(QTextCursor::End);
-        left->insertHtml("<br />" + data);
-        left->moveCursor(QTextCursor::End);
-    }
-    else if (id == idRight) {
-        right->moveCursor(QTextCursor::End);
-        right->insertHtml("<br />" + data);
-        right->moveCursor(QTextCursor::End);
+    else {
+        //nope
     }
 }
 
@@ -353,16 +349,15 @@ void MainWindow::post()
 {
     if (inputMsg->text().isEmpty())
         return;
-    if (idCurrent == 0) {
-        emit post(inputMsg->text(), idLeft);
-        newMessage(pseudo + ": " + inputMsg->text(), idLeft);
-    }
-    else if (idCurrent == 2) {
-        emit post(inputMsg->text(), idRight);
-        newMessage(pseudo + ": " + inputMsg->text(), idRight);
-    }
-    else {
-        emit post(inputMsg->text());
+    switch(idCurrent) {
+        case 0:
+            emit post(inputMsg->text(), left->id());
+            break;
+        case 2:
+            emit post(inputMsg->text(), right->id());
+            break;
+        default:
+            emit post(inputMsg->text());
     }
 
     inputMsg->setText("");
@@ -377,7 +372,7 @@ void MainWindow::prevChat()
     do {
         idCurrent = (idCurrent - 1) % 3;
         if (idCurrent < 0) idCurrent += 3;
-    } while((idCurrent == 0 && idLeft == 0) || (idCurrent == 2 && idRight == 0));
+    } while((idCurrent == 0 && left->id() == 0) || (idCurrent == 2 && right->id() == 0));
 
     chats.value(idCurrent).first->setStyleSheet(QString("QLabel { background-color: ") + LABEL_BACKGROUND_ACTIVE_COLOR + "; }");
     chats.value(idCurrent).second->setStyleSheet(QString("QTextEdit { background-color: ") + TEXTEDIT_BACKGROUND_ACTIVE_COLOR + "; }");
@@ -390,7 +385,7 @@ void MainWindow::nextChat()
 
     do {
         idCurrent = (idCurrent + 1) % 3;
-    } while((idCurrent == 0 && idLeft == 0) || (idCurrent == 2 && idRight == 0));
+    } while((idCurrent == 0 && left->id() == 0) || (idCurrent == 2 && right->id() == 0));
 
     chats.value(idCurrent).first->setStyleSheet(QString("QLabel { background-color: ") + LABEL_BACKGROUND_ACTIVE_COLOR + "; }");
     chats.value(idCurrent).second->setStyleSheet(QString("QTextEdit { background-color: ") + TEXTEDIT_BACKGROUND_ACTIVE_COLOR + "; }");

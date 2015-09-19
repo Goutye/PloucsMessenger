@@ -1,7 +1,6 @@
 #include "maintoolbar.h"
 
 #include <QToolButton>
-#include <QMenu>
 #include <QSize>
 #include <QSizeGrip>
 #include <QDir>
@@ -13,7 +12,9 @@
 MainToolBar::MainToolBar(QWidget *parent) : QToolBar(parent)
 {
     QToolButton *button = new QToolButton(this);
-    QMenu *menu = new QMenu(button);
+    menu = new QMenu(button);
+    usersMenu = new QMenu("Users", menu);
+    menu->addMenu(usersMenu);
 
     QSettings settings("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     QAction *actionStartUp = new QAction("Start-up", menu);
@@ -45,6 +46,17 @@ void MainToolBar::error(QProcess::ProcessError error)
 {
 
     qDebug() << "ERROR" << error;
+}
+
+void MainToolBar::addUserToMenu(QAction *a)
+{
+    a->setParent(usersMenu);
+    usersMenu->addAction(a);
+}
+
+void MainToolBar::removeUserToMenu(QAction *a)
+{
+    usersMenu->removeAction(a);
 }
 
 void MainToolBar::setStartup()

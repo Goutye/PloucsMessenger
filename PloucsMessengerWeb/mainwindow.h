@@ -1,3 +1,5 @@
+#include <QAction>
+#include <QList>
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -5,11 +7,13 @@
 #include <QLineEdit>
 #include <QSplitter>
 #include <QTextEdit>
-#include <QTextBrowser>
 #include <QLabel>
 #include <QMouseEvent>
 #include "socketclient.h"
 #include "filedownloader.h"
+#include "maintoolbar.h"
+#include "useraction.h"
+#include "displaychat.h"
 
 class MainWindow : public QMainWindow
 {
@@ -25,8 +29,6 @@ public:
 public slots:
     void connection(int id, QString pseudo);
     void disconnection(int id);
-    void newMessage(QString data);
-    void newMessage(QString data, int id);
     void post();
     void nextChat();
     void prevChat();
@@ -36,6 +38,7 @@ public slots:
     void updateAvailable(bool b);
     void updateSettingsApp();
     void updatePM();
+    void userPM(int id, QString pseudo);
 
 signals:
     void post(QString data);
@@ -51,15 +54,18 @@ private slots:
 private:
     SocketClient *socket;
     QWidget *window;
-    QTextBrowser *left;
+    DisplayChat *left;
     QLabel *leftLabel;
-    QTextBrowser *middle;
+    DisplayChat *middle;
     QLabel *middleLabel;
-    QTextBrowser *right;
+    DisplayChat *right;
     QLabel *rightLabel;
     QLineEdit *inputMsg;
     QSplitter *splitter;
     FileDownloader *fd;
+    MainToolBar *tb;
+
+    QList<UserAction *> users;
 
     int idLeft = 0;
     int idRight = 0;
@@ -67,7 +73,7 @@ private:
     int idCurrent = 1;
 
     QString pseudo;
-    QMap< int, QPair<QLabel*, QTextEdit*> > chats;
+    QMap< int, QPair<QLabel*, DisplayChat*> > chats;
     bool userIsDisconnected = true;
 
     int  m_nMouseClick_X_Coordinate = 0;

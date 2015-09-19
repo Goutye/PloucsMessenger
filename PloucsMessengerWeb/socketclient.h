@@ -23,6 +23,8 @@ public:
     void start(QString pseudo, QString password, bool autoLogin = false);
     bool write(QByteArray data);
     void checkUpdate();
+    QMap<int, QString> getUsers();
+    bool isOnline(int id);
 
 signals:
     void connection(int id, QString pseudo);
@@ -54,6 +56,7 @@ private:
     bool autoLogin;
     QNetworkAccessManager *manager;
     QUrl url;
+    QMap<int, QString> onlineUsers;
     QMap<int, QString> users;
     int ownID = 0;
     QTimer *timerPing;
