@@ -1,3 +1,4 @@
+#include "tabsarea.h"
 #include <QAction>
 #include <QList>
 #ifndef MAINWINDOW_H
@@ -30,8 +31,6 @@ public slots:
     void connection(int id, QString pseudo);
     void disconnection(int id);
     void post();
-    void nextChat();
-    void prevChat();
     void connectionUser(QString error = 0);
     void isConnected();
     void isDisconnected();
@@ -52,6 +51,8 @@ private slots:
 
 
 private:
+    void addTab(int id, QString pseudo);
+
     SocketClient *socket;
     QWidget *window;
     DisplayChat *left;
@@ -65,15 +66,12 @@ private:
     FileDownloader *fd;
     MainToolBar *tb;
 
+    TabsArea *tabs;
+
     QList<UserAction *> users;
 
-    int idLeft = 0;
-    int idRight = 0;
-
-    int idCurrent = 1;
-
     QString pseudo;
-    QMap< int, QPair<QLabel*, DisplayChat*> > chats;
+    QMap<int, DisplayChat*> chats;
     bool userIsDisconnected = true;
 
     int  m_nMouseClick_X_Coordinate = 0;

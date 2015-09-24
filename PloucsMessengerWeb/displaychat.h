@@ -4,9 +4,6 @@
 #include <QWidget>
 #include <QString>
 
-#define TEXTEDIT_BACKGROUND_ACTIVE_COLOR "#DDDDDD"
-#define TEXTEDIT_BACKGROUND_INACTIVE_COLOR "#BBBBBB"
-
 class DisplayChat : public QTextBrowser
 {
     Q_OBJECT
@@ -23,7 +20,10 @@ public slots:
     void newMessage(QString data, int id);
 
 private:
-    int _id = 0;
+    void setNotification();
+
+    int _id = -1;
+    QWidget *tabsWidget;
 };
 
 #endif // DISPLAYCHAT_H

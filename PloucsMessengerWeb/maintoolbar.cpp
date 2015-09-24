@@ -15,6 +15,7 @@ MainToolBar::MainToolBar(QWidget *parent) : QToolBar(parent)
     menu = new QMenu(button);
     usersMenu = new QMenu("Users", menu);
     menu->addMenu(usersMenu);
+    setMovable(false);
 
     QSettings settings("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     QAction *actionStartUp = new QAction("Start-up", menu);

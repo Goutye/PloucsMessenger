@@ -19,11 +19,17 @@ SOURCES += main.cpp\
     maintoolbar.cpp \
     filedownloader.cpp \
     useraction.cpp \
-    displaychat.cpp
+    displaychat.cpp \
+    tabsarea.cpp \
+    chatwidget.cpp \
+    tabbar.cpp
 
 HEADERS  += mainwindow.h \
     socketclient.h \
     maintoolbar.h \
     filedownloader.h \
     useraction.h \
-    displaychat.h
+    displaychat.h \
+    tabsarea.h \
+    chatwidget.h \
+    tabbar.h
