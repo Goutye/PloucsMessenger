@@ -14,7 +14,7 @@ ChatWidget::~ChatWidget()
 
 }
 
-void ChatWidget::paintEvent(QPaintEvent *event)
+void ChatWidget::paintEvent(QPaintEvent *)
 {
     QStyleOption opt;
     opt.init(this);

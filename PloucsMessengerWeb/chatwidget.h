@@ -9,7 +9,7 @@ class ChatWidget : public QWidget
 public:
     explicit ChatWidget(QWidget *parent = 0);
     ~ChatWidget();
-    void paintEvent(QPaintEvent *event);
+    void paintEvent(QPaintEvent *);
 
 signals:
 

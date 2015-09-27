@@ -1,8 +1,8 @@
 #ifndef DISPLAYCHAT_H
 #define DISPLAYCHAT_H
-#include <QTextBrowser>
 #include <QWidget>
 #include <QString>
+#include <QTextBrowser>
 
 class DisplayChat : public QTextBrowser
 {
@@ -14,13 +14,14 @@ public:
     int id();
 
 signals:
+    void newNotification(int idUser, QString msg);
 
 public slots:
     void newMessage(QString data);
     void newMessage(QString data, int id);
 
 private:
-    void setNotification();
+    void setNotification(QString msg);
 
     int _id = -1;
     QWidget *tabsWidget;

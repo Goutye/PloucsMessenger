@@ -38,6 +38,8 @@ public slots:
     void updateSettingsApp();
     void updatePM();
     void userPM(int id, QString pseudo);
+    void getFont();
+    void notified(int userId, QString msg);
 
 signals:
     void post(QString data);
@@ -77,6 +79,10 @@ private:
     int  m_nMouseClick_X_Coordinate = 0;
     int  m_nMouseClick_Y_Coordinate = 0;
     bool tokenConnectionFailed = false;
+
+    QTextEdit *notif;
+    QWidget *notifWindow;
+    QTimer *notifTimer;
 };
 
 #endif // MAINWINDOW_H

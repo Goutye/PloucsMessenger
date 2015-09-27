@@ -1,3 +1,4 @@
+#include <QWindow>
 #include "mainwindow.h"
 #include "chatwidget.h"
 #include <QHBoxLayout>
@@ -13,12 +14,14 @@
 #include <QCheckBox>
 #include <QCoreApplication>
 #include <QFontDatabase>
+#include <QApplication>
+#include <QDesktopWidget>
 
 #define DEFAULT_WIDTH 400
 #define LABEL_BACKGROUND_ACTIVE_COLOR "#BBBBBB"
 #define LABEL_BACKGROUND_INACTIVE_COLOR "#888888"
 
-#define CHECK_UPDATEw
+#define CHECK_UPDATE
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -58,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
     chats.insert(tabs->count(), dc);
     tabs->addTab(dc, "Plouc's");
     connect(socket, SIGNAL(newMessage(QString)), dc, SLOT(newMessage(QString)));
+    connect(dc, SIGNAL(newNotification(int,QString)), this, SLOT(notified(int,QString)));
 
     vLayout->addWidget(tabs, 10);
 
@@ -78,8 +82,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(inputMsg, SIGNAL(returnPressed()), this, SLOT(post()));
 
-    QShortcut *changeWRight = new QShortcut(QKeySequence(Qt::Key_Tab), tabs, SLOT(nextChat()));
-    QShortcut *changeWLeft = new QShortcut(QKeySequence(Qt::SHIFT + Qt::Key_Tab), tabs, SLOT(prevChat()));
+    QShortcut *next = new QShortcut(QKeySequence(Qt::Key_Tab), tabs, SLOT(nextChat()));
+    QShortcut *prev = new QShortcut(QKeySequence(Qt::SHIFT + Qt::Key_Tab), tabs, SLOT(prevChat()));
     QShortcut *close = new QShortcut(QKeySequence(Qt::Key_Escape), this, SLOT(close()));
 
     window->setAttribute(Qt::WA_TranslucentBackground);
@@ -105,6 +109,70 @@ MainWindow::MainWindow(QWidget *parent)
     connectionUser();
     qDebug() << "\nDEBUG VERSION\n";
 #endif
+
+    notifWindow = new QWidget();
+    notifWindow->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+    notifWindow->setFixedWidth(200);
+    notifWindow->setFixedHeight(60);
+    notifWindow->setContentsMargins(0,0,0,0);
+    notifWindow->setStyleSheet("QTextEdit {"
+                               "    background-color: #2F2F2F;"
+                               "    color: #FFFFFF;"
+                               "    padding-left:5px;"
+                               "    padding-right:5px;"
+                               "}"
+                               "QWidget {"
+                               "    border: 1px solid black;"
+                               "}");
+
+    QHBoxLayout *notifDialogLayout = new QHBoxLayout(notifWindow);
+    notifDialogLayout->setSpacing(0);
+    notifDialogLayout->setContentsMargins(0,0,0,0);
+
+    notif = new QTextEdit(notifWindow);
+    notif->setReadOnly(true);
+    notif->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    notifDialogLayout->addWidget(notif);
+    notifWindow->setLayout(notifDialogLayout);
+    QRect scr = QApplication::desktop()->screenGeometry();
+    notifWindow->move(scr.bottomRight() - QPoint(notifWindow->rect().width(), notifWindow->rect().height()));
+
+    notifTimer = new QTimer();
+
+    connect(notifTimer, SIGNAL(timeout()), notifWindow, SLOT(hide()));
+}
+
+void MainWindow::notified(int userId, QString msg)
+{
+    QApplication::setActiveWindow(this);
+    if (QGuiApplication::applicationState() < 4) {
+        QString pseudo;
+        QString tabName;
+        QString message;
+        pseudo = socket->getUsers().value(userId);
+        if (userId == -1) {
+            tabName = "Plouc's";
+            QStringList list = msg.split(":");
+            if (list.count() > 1) {
+                pseudo = list.at(0) + ": ";
+                message = list.at(1);
+                for (int i = 2; i < list.count(); ++i)
+                    message += ":" + list.at(i);
+            } else {
+                message = msg;
+            }
+        } else {
+            tabName = pseudo;
+            message = msg;
+            pseudo += ": ";
+        }
+
+        QString notifText = "<b style='font-family: Roboto;font-size:15px;color: #EE5500;'>"+ tabName +"</b>";
+        notifText += "<br><b style='font-family: Roboto;font-size:12px;color:#448AFF;'>"+ pseudo +"</b><span style='font-family: Roboto;font-size:12px;'>"+ message +"</span>";
+        notif->setHtml(notifText);
+        notifWindow->show();
+        notifTimer->start(5000);
+    }
 }
 
 void MainWindow::addTab(int id, QString pseudo)
@@ -115,6 +183,7 @@ void MainWindow::addTab(int id, QString pseudo)
     QString label = pseudo;;
     tabs->addTab(dc, label);
     connect(socket, SIGNAL(newMessage(QString,int)), dc, SLOT(newMessage(QString,int)));
+    connect(dc, SIGNAL(newNotification(int,QString)), this, SLOT(notified(int,QString)));
 }
 
 MainWindow::~MainWindow()
@@ -124,21 +193,39 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateAvailable(bool newUpdate)
 {
-    if (newUpdate) {
+    if (newUpdate || !QFile(QCoreApplication::applicationDirPath() + "/resources/Roboto-Regular.ttf").exists()) {
         fd = new FileDownloader(QUrl("http://www.goutye.com/ploucs/PloucsMessenger.exe"), this);
-        connect(fd, SIGNAL(downloaded()), this, SLOT(updateSettingsApp()));
+        connect(fd, SIGNAL(downloaded()), this, SLOT(getFont()));
     } else {
         connectionUser();
     }
 }
 
-void MainWindow::updateSettingsApp()
+void MainWindow::getFont()
 {
     disconnect(fd, SIGNAL(downloaded()), this, SLOT(updateSettingsApp()));
     QFile filePMupdated(QCoreApplication::applicationFilePath() + ".update");
     filePMupdated.open(QFile::WriteOnly);
     filePMupdated.write(fd->downloadedData());
     filePMupdated.close();
+    if (!QFile(QCoreApplication::applicationDirPath() + "/resources/Roboto-Regular.ttf").exists()) {
+        fd = new FileDownloader(QUrl("http://www.goutye.com/ploucs/Roboto-Regular.ttf"), this);
+        connect(fd, SIGNAL(downloaded()), this, SLOT(updateSettingsApp()));
+    } else {
+        qDebug() << "Just basic update";
+        updateSettingsApp();
+    }
+}
+
+void MainWindow::updateSettingsApp()
+{
+    if (!QFile(QCoreApplication::applicationDirPath() + "/resources/Roboto-Regular.ttf").exists()) {
+        disconnect(fd, SIGNAL(downloaded()), this, SLOT(updateSettingsApp()));
+        QFile fileTTFupdated(QCoreApplication::applicationDirPath() + "/resources/Roboto-Regular.ttf");
+        fileTTFupdated.open(QFile::WriteOnly);
+        fileTTFupdated.write(fd->downloadedData());
+        fileTTFupdated.close();
+    }
     fd = new FileDownloader(QUrl("http://www.goutye.com/ploucs/settings.exe"), this);
     connect(fd, SIGNAL(downloaded()), this, SLOT(updatePM()));
 }
@@ -240,6 +327,8 @@ void MainWindow::isConnected()
     UserAction *a;
 
     for (QMap<int, QString>::iterator it = usersMap.begin(); it != usersMap.end(); ++it) {
+        if (it.value() == pseudo)
+            continue;
         a = new UserAction(it.value(), it.key());
         connect(a, SIGNAL(triggered(int,QString)), this, SLOT(userPM(int,QString)));
         tb->addUserToMenu(a);
@@ -258,8 +347,12 @@ void MainWindow::connection(int id, QString pseudo)
     qDebug() << "Connection!";
 
     //search if one is same id
-    if (!tabs->findAndSet(id, pseudo))
-        addTab(id, pseudo);
+    if (!tabs->findAndSet(id, pseudo)) {
+        QString offline("");
+        if (!socket->isOnline(id))
+            offline += " (Offline)";
+        addTab(id, pseudo + offline);
+    }
 }
 
 void MainWindow::disconnection(int id)
@@ -274,6 +367,8 @@ void MainWindow::userPM(int id, QString pseudo)
         return;
 
     //Else create a tab with this user.
+    if (!socket->isOnline(id))
+        pseudo += " (Offline)";
     addTab(id, pseudo);
 }
 
@@ -313,6 +408,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
         qDebug() << "IGNORE";
         emit disconnectionUser();
         event->ignore();
-        QTimer::singleShot(3000, this, SLOT(isDisconnected()));
+        QTimer::singleShot(1000, this, SLOT(isDisconnected()));
     }
 }

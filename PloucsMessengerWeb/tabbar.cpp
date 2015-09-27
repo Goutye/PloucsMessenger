@@ -62,7 +62,7 @@ void TabBar::paintEvent(QPaintEvent *event)
     initStyleBaseTB(&optTabBar, size());
 
     int selected = -1;
-    int cut = -1;
+    //int cut = -1;
     bool rtl = optTabBar.direction == Qt::RightToLeft;
     bool vertical = false;//verticalTabs(shape());
     selected = currentIndex();
@@ -84,7 +84,7 @@ void TabBar::paintEvent(QPaintEvent *event)
         // along when we draw the tear.
         if (((!vertical && (!rtl && tab.rect.left() < 0)) || (rtl && tab.rect.right() > width()))
             || (vertical && tab.rect.top() < 0)) {
-            cut = i;
+            //cut = i;
             cutTab = tab;
         }
         // Don't bother drawing a tab if the entire tab is outside of the visible tab bar.
@@ -100,7 +100,6 @@ void TabBar::paintEvent(QPaintEvent *event)
                       "}");
             p.drawControl(QStyle::CE_TabBarTab, tab);
             setStyleSheet("");
-            qDebug() << "notify";
         } else {
             //p.drawControl(QStyle::CE_TabBarTab, tab);
         }

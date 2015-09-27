@@ -105,7 +105,7 @@ void SocketClient::replyFinished(QNetworkReply* reply)
             if (prefix.compare("msg") == 0)
             {
                 QStringList sl = s.split(":");
-                s = onlineUsers.value(sl.at(0).toInt());
+                s = users.value(sl.at(0).toInt());
                 for (QStringList::iterator it = ++sl.begin(); it < sl.end(); it++)
                     s += ":" + *it;
                 qDebug() << s;
@@ -121,7 +121,7 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                 qDebug() << s;
                 QStringList sl = s.split(":");
                 int target = sl.at(0).toInt();
-                s = onlineUsers.value(target);
+                s = users.value(target);
                 for (QStringList::iterator it = ++sl.begin(); it < sl.end(); it++)
                     s += ":" + *it;
                 emit newMessage(s, target);
@@ -143,8 +143,8 @@ void SocketClient::replyFinished(QNetworkReply* reply)
             else if (prefix.compare("dcn") == 0)
             {
                 emit newMessage(onlineUsers.value(s.toInt()) + " is now Offline.");
-                removeUser(s.toInt());
                 emit disconnection(s.toInt());
+                 removeUser(s.toInt());
             }
             else if (prefix.compare("list") == 0)
             {
@@ -155,10 +155,10 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                     QStringList infos = QString(*it).split(":");
                     users.insert(infos.at(0).toInt(), infos.at(1));
                 }
+                timerPing->start(100);
             }
             else if (prefix.compare("listOnline") == 0)
             {
-                timerPing->start(100);
                 qDebug() << "[List received]" << s;
                 emit isConnected();
                 if (s.isEmpty())
@@ -167,8 +167,8 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                 for (QStringList::iterator it = users.begin(); it != users.end(); ++it)
                 {
                     QStringList infos = QString(*it).split(":");
-                    emit connection(infos.at(0).toInt(), infos.at(1));
                     addUser(infos.at(0).toInt(), infos.at(1));
+                    emit connection(infos.at(0).toInt(), infos.at(1));
                 }
             }
             else if (prefix.compare("md5") == 0)

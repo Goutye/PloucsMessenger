@@ -23,7 +23,7 @@ TabsArea::TabsArea(QWidget *parent) : QTabWidget(parent)
                         "padding-right:10px;"
                         "color: #888888;"
                         "font-size:16px;"
-                        "font-family: Roboto-Light;"
+                        "font-family: Roboto;"
                     "}"
                     "QTabBar::tab:selected {"
                         "color: #EEEEEE;"
@@ -49,7 +49,6 @@ TabsArea::~TabsArea()
 
 void TabsArea::currentChanged(int index)
 {
-    QTabBar *tabBar = findChild<QTabBar *>();
     if (index == currentIndex())
         setNotify(index, false);
 }

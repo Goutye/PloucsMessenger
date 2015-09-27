@@ -6,15 +6,14 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    if (QFontDatabase::addApplicationFont(QCoreApplication::applicationFilePath() + "/resources/Roboto-Light.ttf"))
-        qDebug() << "ok";
-    if (QFontDatabase::addApplicationFont(QCoreApplication::applicationFilePath() + "/resources/Roboto-Bold.ttf"))
-        qDebug() << "ok";
+    qDebug() << QString("ok %1").arg(QFontDatabase::addApplicationFont(QCoreApplication::applicationDirPath() + "/resources/Roboto-Regular.ttf"));
 
-    QFont f("Roboto-Light");
-    QFont f2("Roboto-Bold");
+    QFont f("Roboto");
 
     QApplication::setFont(f);
+    QStringList st = QFontDatabase::applicationFontFamilies(0);
+    for (int i = 0; i < st.count(); ++i)
+        qDebug() << st.at(i);
 
     MainWindow w;
     w.show();
