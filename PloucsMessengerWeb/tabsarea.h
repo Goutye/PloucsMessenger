@@ -6,6 +6,9 @@
 #include <QMap>
 #include "displaychat.h"
 
+#define TAB_WIDTH 75
+#define TAB_PADDING 10
+
 class TabsArea : public QTabWidget
 {
     Q_OBJECT
@@ -27,6 +30,9 @@ public slots:
     void prevChat();
     void nextChat();
     void removeTab(int i);
+
+private slots:
+    void refreshAlert();
 
 private:
     void setIdDC(int i, int id);

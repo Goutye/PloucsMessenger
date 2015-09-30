@@ -1,4 +1,5 @@
 #include "displaychat.h"
+#include <QGuiApplication>
 
 #include <qDebug>
 #include <QTabBar>
@@ -42,10 +43,14 @@ void DisplayChat::setNotification(QString msg)
     if (idTab == -1)
         return;
 
-    if (tabs->currentIndex() != idTab && !tabs->notify(idTab)) {
-        tabs->setNotify(idTab, true);
-        qDebug() << QString("NOTIF " + msg + " %1").arg(_id);
-        emit newNotification(_id, msg);
+    if (tabs->currentIndex() != idTab || QGuiApplication::applicationState() < 4) {
+        if (!tabs->notify(idTab)) {
+            tabs->setNotify(idTab, true);
+            qDebug() << QString("NOTIF " + msg + " %1").arg(_id);
+            emit newNotification(_id, msg);
+        }
+
+        emit playSound(SoundManager::newMessage);
     }
 }
 
@@ -58,7 +63,7 @@ void DisplayChat::newMessage(QString data)
         QString message = list.at(1);
         for (int i = 2; i < list.count(); ++i)
             message += ":" + list.at(i);
-        insertHtml("<br><b style='font-family: Roboto;font-size:15px;color:#448AFF;'>"+ list.at(0) +": </b><span style='font-family: Roboto;font-size:15px;'>"+ message +"</span>");
+        insertHtml("<br><b style='font-family: Roboto;font-size:15px;color:#82B1FF;'>"+ list.at(0) +": </b><span style='font-family: Roboto;font-size:15px;'>"+ message +"</span>");
         setNotification(data);
     }
     else {
@@ -78,7 +83,7 @@ void DisplayChat::newMessage(QString data, int id)
             QString message = list.at(1);
             for (int i = 2; i < list.count(); ++i)
                 message += ":" + list.at(i);
-            insertHtml("<br><b style='font-family: Roboto;font-size:15px;color:#448AFF;'>"+ list.at(0) +": </b><span style='font-family: Roboto;font-size:15px;'>"+ message +"</span>");
+            insertHtml("<br><b style='font-family: Roboto;font-size:15px;color:#82B1FF;'>"+ list.at(0) +": </b><span style='font-family: Roboto;font-size:15px;'>"+ message +"</span>");
             setNotification(list.at(1));
         }
         else {

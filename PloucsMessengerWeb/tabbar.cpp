@@ -96,7 +96,7 @@ void TabBar::paintEvent(QPaintEvent *event)
             continue;
         if (((TabsArea *) parent())->notify(i)) {
             setStyleSheet("QTabBar::tab{"
-                          "border-bottom-color: #CC3300;"
+                          "border-bottom-color: #3E4C64;"
                       "}");
             p.drawControl(QStyle::CE_TabBarTab, tab);
             setStyleSheet("");

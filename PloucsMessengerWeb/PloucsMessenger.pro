@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network
+QT       += core gui network multimedia
 QMAKE_CXXFLAGS += -std=c++11
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -16,20 +16,29 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     socketclient.cpp \
-    maintoolbar.cpp \
     filedownloader.cpp \
     useraction.cpp \
     displaychat.cpp \
     tabsarea.cpp \
     chatwidget.cpp \
-    tabbar.cpp
+    tabbar.cpp \
+    soundmanager.cpp \
+    inputtextedit.cpp \
+    optionbutton.cpp \
+    windowbuttons.cpp
 
 HEADERS  += mainwindow.h \
     socketclient.h \
-    maintoolbar.h \
     filedownloader.h \
     useraction.h \
     displaychat.h \
     tabsarea.h \
     chatwidget.h \
-    tabbar.h
+    tabbar.h \
+    soundmanager.h \
+    inputtextedit.h \
+    optionbutton.h \
+    windowbuttons.h
+
+RESOURCES += \
+    icons.qrc

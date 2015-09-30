@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/icons">
+    <file alias="setting_normal">resources/icons/setting_normal.png</file>
+    <file alias="setting_click">resources/icons/setting_click.png</file>
+    <file alias="setting_hover">resources/icons/setting_hover.png</file>
+</qresource>
+</RCC>

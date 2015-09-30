@@ -1,8 +1,8 @@
-#ifndef MAINTOOLBAR_H
-#define MAINTOOLBAR_H
+#ifndef OPTIONBUTTON_H
+#define OPTIONBUTTON_H
 
 #include <QObject>
-#include <QToolBar>
+#include <QToolButton>
 #include <QProcess>
 #include <QMenu>
 
@@ -11,20 +11,22 @@
     #include <shellapi.h>
 #endif
 
-class MainToolBar : public QToolBar
+class OptionButton : public QToolButton
 {
     Q_OBJECT
 public:
-    explicit MainToolBar(QWidget *parent = 0);
-    ~MainToolBar();
+    explicit OptionButton(QWidget *parent = 0);
+    ~OptionButton();
     void addUserToMenu(QAction * a);
     void removeUserToMenu(QAction *a);
 
 signals:
+    void mute(bool);
 
 public slots:
 
 private slots:
+    void emitMute(bool b);
     void setStartup();
     void error(QProcess::ProcessError error);
 
@@ -33,4 +35,4 @@ private:
     QMenu *usersMenu;
 };
 
-#endif // MAINTOOLBAR_H
+#endif // OPTIONBUTTON_H

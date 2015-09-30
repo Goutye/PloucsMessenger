@@ -1,7 +1,9 @@
+#include <QTimer>
 #include <QToolButton>
 #include "tabsarea.h"
 #include <qDebug>
 #include <QTabBar>
+#include <QApplication>
 
 #include "tabbar.h"
 
@@ -12,22 +14,22 @@ TabsArea::TabsArea(QWidget *parent) : QTabWidget(parent)
     //setMovable(true);
     connect(this, SIGNAL(tabCloseRequested(int)), this, SLOT(removeTab(int)));
     connect(this, SIGNAL(currentChanged(int)), this, SLOT(currentChanged(int)));
-
-    QString style = "QTabBar::tab {"
+    QString style = QString("QTabBar::tab {"
+                        "") +
                         "background: #202020;"
                         "border-bottom: 2px solid #202020;"
-                        "min-width: 20ex;"
+                        "width: "+ QString("%1").arg(TAB_WIDTH) +"px;"
                         "height: 8ex;"
                         "padding: 2px;"
-                        "padding-left:10px;"
-                        "padding-right:10px;"
+                        "padding-left: "+ QString("%1").arg(TAB_PADDING) +"px;"
+                        "padding-right: "+ QString("%1").arg(TAB_PADDING) +"px;"
                         "color: #888888;"
                         "font-size:16px;"
                         "font-family: Roboto;"
                     "}"
                     "QTabBar::tab:selected {"
                         "color: #EEEEEE;"
-                        "border-bottom-color: #4587F6;"
+                        "border-bottom-color: #82B1FF;"
                     "}"
                     "QTabWidget::pane {"
                         "border-top: 5px solid qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
@@ -113,11 +115,26 @@ bool TabsArea::notify(int i)
     return notifyTabs.contains(i) && notifyTabs.value(i);
 }
 
+void TabsArea::refreshAlert()
+{
+    for (int i = 0; i < count(); ++i) {
+        if (notify(i)) {
+            QApplication::alert(this, 1000);
+            QTimer::singleShot(1000, this, SLOT(refreshAlert()));
+            return;
+        }
+    }
+    return;
+}
+
 void TabsArea::setNotify(int i, bool b)
 {
     notifyTabs.insert(i, b);
-    if (b)
+    if (b) {
         tabBar()->update();
+        QApplication::alert(this, 1000);
+        QTimer::singleShot(1000, this, SLOT(refreshAlert()));
+    }
 }
 
 void TabsArea::addTab(QWidget *widget, const QString &s)

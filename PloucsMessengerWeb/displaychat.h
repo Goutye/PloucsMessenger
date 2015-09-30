@@ -3,6 +3,7 @@
 #include <QWidget>
 #include <QString>
 #include <QTextBrowser>
+#include "soundmanager.h"
 
 class DisplayChat : public QTextBrowser
 {
@@ -15,6 +16,7 @@ public:
 
 signals:
     void newNotification(int idUser, QString msg);
+    void playSound(SoundManager::Name name);
 
 public slots:
     void newMessage(QString data);

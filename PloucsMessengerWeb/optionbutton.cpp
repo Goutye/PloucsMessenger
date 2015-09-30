@@ -1,6 +1,5 @@
-#include "maintoolbar.h"
+#include "optionbutton.h"
 
-#include <QToolButton>
 #include <QSize>
 #include <QSizeGrip>
 #include <QDir>
@@ -9,13 +8,16 @@
 #include <QTimer>
 #include <QCoreApplication>
 
-MainToolBar::MainToolBar(QWidget *parent) : QToolBar(parent)
+OptionButton::OptionButton(QWidget *parent) : QToolButton(parent)
 {
-    QToolButton *button = new QToolButton(this);
-    menu = new QMenu(button);
+    menu = new QMenu(this);
     usersMenu = new QMenu("Users", menu);
     menu->addMenu(usersMenu);
-    setMovable(false);
+
+    QAction *actionMute = new QAction("Mute", menu);
+    actionMute->setCheckable(true);
+    connect(actionMute, SIGNAL(triggered(bool)), this, SLOT(emitMute(bool)));
+    menu->addAction(actionMute);
 
     QSettings settings("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     QAction *actionStartUp = new QAction("Start-up", menu);
@@ -24,43 +26,55 @@ MainToolBar::MainToolBar(QWidget *parent) : QToolBar(parent)
     connect(actionStartUp, SIGNAL(triggered()), this, SLOT(setStartup()));
     menu->addAction(actionStartUp);
 
-    button->setMenu(menu);
-    button->setPopupMode(QToolButton::InstantPopup);
-    this->setIconSize(QSize(5,10));
-    this->addWidget(button);
-
-    QWidget* spacer = new QWidget();
-    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    this->addWidget(spacer);
-
-    QSizeGrip *sizeGrip = new QSizeGrip(this);
-    sizeGrip->setFixedHeight(5);
-    this->addWidget(sizeGrip);
+    setMenu(menu);
+    setPopupMode(QToolButton::InstantPopup);
+//    QSizeGrip *sizeGrip = new QSizeGrip(this);
+//    sizeGrip->setFixedHeight(5);
+//    this->addWidget(sizeGrip);
+    setFixedSize(22, 17);
+    setStyleSheet(  "QToolButton {"
+                    "   border: 0px solid black;"
+                    "   background: url(:/icons/setting_normal) center no-repeat;"
+                    "}"
+                    "QToolButton:menu-indicator {"
+                    "   image: none;"
+                    "}"
+                    "QToolButton:pressed {"
+                    "   background: url(:/icons/setting_pressed) center no-repeat;"
+                    "}"
+                    "QToolButton:hover {"
+                    "   background: url(:/icons/setting_hover) center no-repeat;"
+                    "}");
 }
 
-MainToolBar::~MainToolBar()
+OptionButton::~OptionButton()
 {
 
 }
 
-void MainToolBar::error(QProcess::ProcessError error)
+void OptionButton::emitMute(bool b)
+{
+    emit mute(b);
+}
+
+void OptionButton::error(QProcess::ProcessError error)
 {
 
     qDebug() << "ERROR" << error;
 }
 
-void MainToolBar::addUserToMenu(QAction *a)
+void OptionButton::addUserToMenu(QAction *a)
 {
     a->setParent(usersMenu);
     usersMenu->addAction(a);
 }
 
-void MainToolBar::removeUserToMenu(QAction *a)
+void OptionButton::removeUserToMenu(QAction *a)
 {
     usersMenu->removeAction(a);
 }
 
-void MainToolBar::setStartup()
+void OptionButton::setStartup()
 {
     qDebug() << QCoreApplication::applicationDirPath() + "/settings.exe";
     QString program = QCoreApplication::applicationDirPath() + "/settings.exe";

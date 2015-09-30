@@ -1,3 +1,4 @@
+#include <QStackedLayout>
 #include <QWindow>
 #include "mainwindow.h"
 #include "chatwidget.h"
@@ -16,18 +17,21 @@
 #include <QFontDatabase>
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QtCore>
 
 #define DEFAULT_WIDTH 400
 #define LABEL_BACKGROUND_ACTIVE_COLOR "#BBBBBB"
 #define LABEL_BACKGROUND_INACTIVE_COLOR "#888888"
 
-#define CHECK_UPDATE
+#define CHECK_UPDATEw
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     qsrand(time(0));
 
+    qRegisterMetaType<SoundManager::Name>("SoundManager::Name");
+    sm = new SoundManager();
     socket = new SocketClient();
 
     connect(socket, SIGNAL(updateAvailable(bool)), this, SLOT(updateAvailable(bool)));
@@ -49,9 +53,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     setWindowFlags(Qt::FramelessWindowHint);
 
-    tb = new MainToolBar(this);
-    addToolBar(Qt::RightToolBarArea, tb);
-
     QVBoxLayout *vLayout = new QVBoxLayout;
     vLayout->setContentsMargins(0,0,0,0);
 
@@ -62,11 +63,23 @@ MainWindow::MainWindow(QWidget *parent)
     tabs->addTab(dc, "Plouc's");
     connect(socket, SIGNAL(newMessage(QString)), dc, SLOT(newMessage(QString)));
     connect(dc, SIGNAL(newNotification(int,QString)), this, SLOT(notified(int,QString)));
+    connect(dc, SIGNAL(playSound(SoundManager::Name)), sm, SLOT(play(SoundManager::Name)));
 
-    vLayout->addWidget(tabs, 10);
+    QStackedLayout *stackLayout = new QStackedLayout;
+    stackLayout->setStackingMode(QStackedLayout::StackAll);
+    int id = stackLayout->addWidget(tabs);
 
-    inputMsg = new QLineEdit();
-    inputMsg->setFixedHeight(40);
+    optionButton = new OptionButton(tabs);
+    connect( optionButton, SIGNAL(mute(bool)), sm, SLOT(setMute(bool)));
+
+    windowButtons = new WindowButtons(tabs);
+    connect(windowButtons, SIGNAL(close()), this, SLOT(close()));
+    connect(windowButtons, SIGNAL(minimize()), this, SLOT(showMinimized()));
+
+    vLayout->addLayout(stackLayout, 10);
+
+    inputMsg = new InputTextEdit(window);
+    inputMsg->setFixedHeight(60);
     ChatWidget *inputChat = new ChatWidget(window);
     QVBoxLayout *inputChatLayout = new QVBoxLayout;
     inputChat->setLayout(inputChatLayout);
@@ -76,7 +89,7 @@ MainWindow::MainWindow(QWidget *parent)
     window->setLayout(vLayout);
     vLayout->setSpacing(0);
     window->setContentsMargins(0,0,0,0);
-    setContentsMargins(1,1,1,1);
+    setContentsMargins(0,0,0,0);
 
     setCentralWidget(window);
 
@@ -91,17 +104,25 @@ MainWindow::MainWindow(QWidget *parent)
                                 "border: 5px solid black;}"
                   "QMainWindow > QWidget { background-color: #202020; }"
                   "QMainWindow > QWidget > QWidget { background-color: #414141; }"
-                  "QMainWindow QLineEdit { border-width: 2px;"
-                                          "border-style:solid;"
-                                          "border-color: #525252;"
-                                          "background-color: #414141;"
-                                          "color: #F4F4F4;}"
-                  "QTextEdit { border: 0px solid black; "
+                  "QTextEdit { border-width: 2px;"
+                              "border-style:solid;"
+                              "border-color: #525252;"
+                              "background-color: #414141;"
+                              "color: #F4F4F4;}"
+                  "QToolBar { border-color: #666666; }"
+                  "QTabWidget QTextEdit { border: 0px solid black; "
                               "border-bottom: 5px solid qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
                   "stop: 0 #2E2F2F, stop: 0.5 #272827, stop: 1.0 #222222);"
                               "background-color: #2F2F2F;"
                               "color: #FFFFFF;}"
-                  "QToolBar { border-color: #666666; }");
+                  "QMenu::item { background-color: #202020; "
+                  "              color: #888888;"
+                  "              border-color: #525252;"
+                  "              padding: 2px 16px 2px 16px;}"
+                  "QMenu { border: 0px solid #111111;}"
+                  "QMenu::item::selected { color:#EEEEEE; }"
+                  "QMenu::separator { background-color: #404040;"
+                  "                   height: 2px;}");
     setWindowOpacity(1);
     resize(DEFAULT_WIDTH, height());
 
@@ -144,7 +165,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::notified(int userId, QString msg)
 {
-    QApplication::setActiveWindow(this);
     if (QGuiApplication::applicationState() < 4) {
         QString pseudo;
         QString tabName;
@@ -164,11 +184,11 @@ void MainWindow::notified(int userId, QString msg)
         } else {
             tabName = pseudo;
             message = msg;
-            pseudo += ": ";
+            pseudo = "";
         }
 
-        QString notifText = "<b style='font-family: Roboto;font-size:15px;color: #EE5500;'>"+ tabName +"</b>";
-        notifText += "<br><b style='font-family: Roboto;font-size:12px;color:#448AFF;'>"+ pseudo +"</b><span style='font-family: Roboto;font-size:12px;'>"+ message +"</span>";
+        QString notifText = "<b style='font-family: Roboto;font-size:15px;color: #82B1FF;'>"+ tabName +"</b>";
+        notifText += "<br><b style='font-family: Roboto;font-size:12px;color:#82B1FF;'>"+ pseudo +"</b><span style='font-family: Roboto;font-size:12px;'>"+ message +"</span>";
         notif->setHtml(notifText);
         notifWindow->show();
         notifTimer->start(5000);
@@ -184,11 +204,19 @@ void MainWindow::addTab(int id, QString pseudo)
     tabs->addTab(dc, label);
     connect(socket, SIGNAL(newMessage(QString,int)), dc, SLOT(newMessage(QString,int)));
     connect(dc, SIGNAL(newNotification(int,QString)), this, SLOT(notified(int,QString)));
+    connect(dc, SIGNAL(playSound(SoundManager::Name)), sm, SLOT(play(SoundManager::Name)));
+    resizeEvent(new QResizeEvent(size(), size()));
 }
 
 MainWindow::~MainWindow()
 {
 
+}
+
+void MainWindow::resizeEvent(QResizeEvent *e)
+{
+    optionButton->move((TAB_WIDTH + TAB_PADDING * 2) * tabs->count() + 11, 11);
+    windowButtons->move(width() - 40, 13);
 }
 
 void MainWindow::updateAvailable(bool newUpdate)
@@ -331,7 +359,7 @@ void MainWindow::isConnected()
             continue;
         a = new UserAction(it.value(), it.key());
         connect(a, SIGNAL(triggered(int,QString)), this, SLOT(userPM(int,QString)));
-        tb->addUserToMenu(a);
+        optionButton->addUserToMenu(a);
         users.append(a);
     }
 }
@@ -374,15 +402,17 @@ void MainWindow::userPM(int id, QString pseudo)
 
 void MainWindow::post()
 {
-    if (inputMsg->text().isEmpty())
+    if (inputMsg->toPlainText().isEmpty())
         return;
 
     int idUser = tabs->currentIdDC();
-
+    QString text = inputMsg->toPlainText();
+    text.remove(text.count()-1, 1);
+    text.replace('\n', "<br>");
     if (idUser == -1)
-        emit post(inputMsg->text());
+        emit post(text);
     else
-        emit post(inputMsg->text(), idUser);
+        emit post(text, idUser);
 
     inputMsg->setText("");
     qDebug() << "Posted!";

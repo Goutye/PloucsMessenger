@@ -1,4 +1,8 @@
+#include <QPushButton>
+#include "windowbuttons.h"
 #include "tabsarea.h"
+#include "soundmanager.h"
+#include "inputtextedit.h"
 #include <QAction>
 #include <QList>
 #ifndef MAINWINDOW_H
@@ -12,7 +16,7 @@
 #include <QMouseEvent>
 #include "socketclient.h"
 #include "filedownloader.h"
-#include "maintoolbar.h"
+#include "optionbutton.h"
 #include "useraction.h"
 #include "displaychat.h"
 
@@ -48,6 +52,7 @@ signals:
 
 protected:
     void closeEvent(QCloseEvent *event);
+    void resizeEvent(QResizeEvent *e);
 
 private slots:
 
@@ -61,14 +66,16 @@ private:
     QLabel *leftLabel;
     DisplayChat *middle;
     QLabel *middleLabel;
-    DisplayChat *right;
+    DisplayChat *right; //#313131
     QLabel *rightLabel;
-    QLineEdit *inputMsg;
+    InputTextEdit *inputMsg;
     QSplitter *splitter;
     FileDownloader *fd;
-    MainToolBar *tb;
+    SoundManager *sm;
 
     TabsArea *tabs;
+    OptionButton *optionButton;
+    WindowButtons *windowButtons;
 
     QList<UserAction *> users;
 
