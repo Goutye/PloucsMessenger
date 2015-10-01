@@ -100,9 +100,19 @@ void TabBar::paintEvent(QPaintEvent *event)
                       "}");
             p.drawControl(QStyle::CE_TabBarTab, tab);
             setStyleSheet("");
+        } else if (((TabsArea *) parent())->isDisconnected(i)) {
+            setStyleSheet("QTabBar::tab{"
+                          " color:#333333;"
+                          "}"
+                          "QTabBar::tab:hover{"
+                          " color: #EEEEEE;"
+                          "}");
+            p.drawControl(QStyle::CE_TabBarTab, tab);
+            setStyleSheet("");
         } else {
             //p.drawControl(QStyle::CE_TabBarTab, tab);
         }
+
 
         if (selected >= 0) {
             QStyleOptionTabV3 tab;

@@ -82,11 +82,12 @@ bool TabsArea::findAndSet(int id, QString pseudo)
     return false;
 }
 
-bool TabsArea::findAndAdd(int id, QString pseudo)
+bool TabsArea::findAndSetDisconnect(int id, bool b)
 {
     for (int i = 0; i < count(); ++i) {
         if (id == idDC(i)) {
-            setTabText(i, tabText(i) + pseudo);
+            isDisconnectUser.insert(i, b);
+            qDebug() << i << id << b;
             return true;
         }
     }
@@ -113,6 +114,11 @@ void TabsArea::removeTab(int i)
 bool TabsArea::notify(int i)
 {
     return notifyTabs.contains(i) && notifyTabs.value(i);
+}
+
+bool TabsArea::isDisconnected(int i)
+{
+    return isDisconnectUser.value(i);
 }
 
 void TabsArea::refreshAlert()
@@ -145,4 +151,6 @@ void TabsArea::addTab(QWidget *widget, const QString &s)
         tabBar->setTabButton(0, QTabBar::RightSide, 0);
         tabBar->setTabButton(0, QTabBar::LeftSide, 0);
     }
+    isDisconnectUser.insert(count() - 1, false);
+    qDebug() << s << count() - 1;
 }

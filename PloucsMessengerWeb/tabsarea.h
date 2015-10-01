@@ -18,10 +18,11 @@ public:
     int currentIdDC();
     int idDC(int i);
     bool findAndSet(int id, QString pseudo);
-    bool findAndAdd(int id, QString pseudo);
+    bool findAndSetDisconnect(int id, bool b);
     void addTab(QWidget *widget, const QString &s);
     void setNotify(int i, bool b);
     bool notify(int i);
+    bool isDisconnected(int i);
 
 signals:
 
@@ -37,6 +38,7 @@ private slots:
 private:
     void setIdDC(int i, int id);
 
+    QMap<int, bool> isDisconnectUser;
     QMap<int, bool> notifyTabs;
 };
 

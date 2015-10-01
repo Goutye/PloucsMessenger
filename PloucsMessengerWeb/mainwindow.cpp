@@ -376,28 +376,29 @@ void MainWindow::connection(int id, QString pseudo)
 
     //search if one is same id
     if (!tabs->findAndSet(id, pseudo)) {
-        QString offline("");
+        addTab(id, pseudo);
         if (!socket->isOnline(id))
-            offline += " (Offline)";
-        addTab(id, pseudo + offline);
+            tabs->findAndSetDisconnect(id, true);
+    } else {
+        tabs->findAndSetDisconnect(id, false);
     }
 }
 
 void MainWindow::disconnection(int id)
 {
-    !tabs->findAndAdd(id, " (Offline)");
+    tabs->findAndSetDisconnect(id, true);
 }
 
 void MainWindow::userPM(int id, QString pseudo)
 {
     //If a tab with this user is already opened.
-    if (tabs->findAndAdd(id, ""))
+    if (tabs->findAndSet(id, pseudo))
         return;
 
     //Else create a tab with this user.
-    if (!socket->isOnline(id))
-        pseudo += " (Offline)";
     addTab(id, pseudo);
+    if (!socket->isOnline(id))
+        tabs->findAndSetDisconnect(id, true);
 }
 
 void MainWindow::post()

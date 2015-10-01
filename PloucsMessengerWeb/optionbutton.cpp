@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QTimer>
 #include <QCoreApplication>
+#include <QSettings>
 
 OptionButton::OptionButton(QWidget *parent) : QToolButton(parent)
 {
@@ -14,8 +15,10 @@ OptionButton::OptionButton(QWidget *parent) : QToolButton(parent)
     usersMenu = new QMenu("Users", menu);
     menu->addMenu(usersMenu);
 
+    QSettings settingsUser(QCoreApplication::applicationDirPath() + "/resources/user_config.ini", QSettings::IniFormat);
     QAction *actionMute = new QAction("Mute", menu);
     actionMute->setCheckable(true);
+    actionMute->setChecked(settingsUser.value("mute", false).toBool());
     connect(actionMute, SIGNAL(triggered(bool)), this, SLOT(emitMute(bool)));
     menu->addAction(actionMute);
 
@@ -55,6 +58,8 @@ OptionButton::~OptionButton()
 void OptionButton::emitMute(bool b)
 {
     emit mute(b);
+    QSettings settings(QCoreApplication::applicationDirPath() + "/resources/user_config.ini", QSettings::IniFormat);
+    settings.setValue("mute", b);
 }
 
 void OptionButton::error(QProcess::ProcessError error)
