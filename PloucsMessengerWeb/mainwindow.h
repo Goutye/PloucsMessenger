@@ -1,8 +1,9 @@
 #include <QPushButton>
-#include "windowbuttons.h"
-#include "tabsarea.h"
+#include "Options/windowbuttons.h"
+#include "Tabs/tabsarea.h"
 #include "soundmanager.h"
 #include "inputtextedit.h"
+#include "emoticons.h"
 #include <QAction>
 #include <QList>
 #ifndef MAINWINDOW_H
@@ -16,9 +17,9 @@
 #include <QMouseEvent>
 #include "socketclient.h"
 #include "filedownloader.h"
-#include "optionbutton.h"
-#include "useraction.h"
-#include "displaychat.h"
+#include "Options/optionbutton.h"
+#include "Options/useraction.h"
+#include "Tabs/displaychat.h"
 
 class MainWindow : public QMainWindow
 {
@@ -90,6 +91,8 @@ private:
     QTextEdit *notif;
     QWidget *notifWindow;
     QTimer *notifTimer;
+
+    Emoticons *em;
 };
 
 #endif // MAINWINDOW_H

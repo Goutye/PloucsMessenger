@@ -32,6 +32,9 @@ public slots:
     void nextChat();
     void removeTab(int i);
 
+protected:
+    void mousePressEvent(QMouseEvent *e);
+
 private slots:
     void refreshAlert();
 

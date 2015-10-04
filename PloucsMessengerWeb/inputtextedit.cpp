@@ -19,6 +19,7 @@ void InputTextEdit::keyPressEvent(QKeyEvent *e)
         canSend = false;
         break;
     case Qt::Key_Return:
+    case Qt::Key_Enter:
         if (canSend)
             emit returnPressed();
         break;

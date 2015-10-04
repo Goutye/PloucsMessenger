@@ -17,28 +17,33 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     socketclient.cpp \
     filedownloader.cpp \
-    useraction.cpp \
-    displaychat.cpp \
-    tabsarea.cpp \
-    chatwidget.cpp \
-    tabbar.cpp \
     soundmanager.cpp \
     inputtextedit.cpp \
-    optionbutton.cpp \
-    windowbuttons.cpp
+    Tabs/tabbar.cpp \
+    Tabs/tabsarea.cpp \
+    Tabs/chatwidget.cpp \
+    Tabs/displaychat.cpp \
+    Options/windowbuttons.cpp \
+    Options/optionbutton.cpp \
+    Options/useraction.cpp \
+    emoticons.cpp \
+    emoticondownloader.cpp
 
 HEADERS  += mainwindow.h \
     socketclient.h \
     filedownloader.h \
-    useraction.h \
-    displaychat.h \
-    tabsarea.h \
-    chatwidget.h \
-    tabbar.h \
     soundmanager.h \
     inputtextedit.h \
-    optionbutton.h \
-    windowbuttons.h
+    Tabs/tabsarea.h \
+    Tabs/chatwidget.h \
+    Tabs/displaychat.h \
+    Tabs/tabbar.h \
+    Options/optionbutton.h \
+    Options/windowbuttons.h \
+    Options/useraction.h \
+    emoticons.h \
+    emoticondownloader.h
 
 RESOURCES += \
-    icons.qrc
+    icons.qrc \
+    sounds.qrc

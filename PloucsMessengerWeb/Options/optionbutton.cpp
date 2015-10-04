@@ -21,6 +21,14 @@ OptionButton::OptionButton(QWidget *parent) : QToolButton(parent)
     actionMute->setChecked(settingsUser.value("mute", false).toBool());
     connect(actionMute, SIGNAL(triggered(bool)), this, SLOT(emitMute(bool)));
     menu->addAction(actionMute);
+    actionsINI.insert("mute", actionMute);
+
+    QAction *actionBackgroundTask = new QAction("Minimize on startup", menu);
+    actionBackgroundTask->setCheckable(true);
+    actionBackgroundTask->setChecked(settingsUser.value("minimizeOnStartup", false).toBool());
+    connect(actionBackgroundTask, SIGNAL(triggered()), this, SLOT(saveOptions()));
+    menu->addAction(actionBackgroundTask);
+    actionsINI.insert("minimizeOnStartup", actionBackgroundTask);
 
     QSettings settings("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     QAction *actionStartUp = new QAction("Start-up", menu);
@@ -55,11 +63,34 @@ OptionButton::~OptionButton()
 
 }
 
+void OptionButton::initOptions()
+{
+    QSettings settingsUser(QCoreApplication::applicationDirPath() + "/resources/user_config.ini", QSettings::IniFormat);
+    emit mute(settingsUser.value("mute", false).toBool());
+
+    if (settingsUser.value("minimizeOnStartup").toBool())
+        QTimer::singleShot(500, this, SLOT(emitMinimize()));
+}
+
+void OptionButton::emitMinimize()
+{
+    emit minimize();
+}
+
 void OptionButton::emitMute(bool b)
 {
     emit mute(b);
     QSettings settings(QCoreApplication::applicationDirPath() + "/resources/user_config.ini", QSettings::IniFormat);
     settings.setValue("mute", b);
+}
+
+void OptionButton::saveOptions()
+{
+    QSettings settings(QCoreApplication::applicationDirPath() + "/resources/user_config.ini", QSettings::IniFormat);
+
+    for (QMap<QString, QAction*>::iterator it = actionsINI.begin(); it != actionsINI.end(); ++it) {
+        settings.setValue(it.key(), it.value()->isChecked());
+    }
 }
 
 void OptionButton::error(QProcess::ProcessError error)

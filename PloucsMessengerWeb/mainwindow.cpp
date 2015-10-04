@@ -1,7 +1,7 @@
 #include <QStackedLayout>
 #include <QWindow>
 #include "mainwindow.h"
-#include "chatwidget.h"
+#include "Tabs/chatwidget.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QDebug>
@@ -23,7 +23,7 @@
 #define LABEL_BACKGROUND_ACTIVE_COLOR "#BBBBBB"
 #define LABEL_BACKGROUND_INACTIVE_COLOR "#888888"
 
-#define CHECK_UPDATEw
+#define CHECK_UPDATE
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -32,6 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     qRegisterMetaType<SoundManager::Name>("SoundManager::Name");
     sm = new SoundManager();
+    em = new Emoticons;
     socket = new SocketClient();
 
     connect(socket, SIGNAL(updateAvailable(bool)), this, SLOT(updateAvailable(bool)));
@@ -58,7 +59,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     tabs = new TabsArea(window);
 
-    DisplayChat *dc = new DisplayChat(tabs);
+    DisplayChat *dc = new DisplayChat(em, tabs);
     chats.insert(tabs->count(), dc);
     tabs->addTab(dc, "Plouc's");
     connect(socket, SIGNAL(newMessage(QString)), dc, SLOT(newMessage(QString)));
@@ -70,7 +71,9 @@ MainWindow::MainWindow(QWidget *parent)
     int id = stackLayout->addWidget(tabs);
 
     optionButton = new OptionButton(tabs);
-    connect( optionButton, SIGNAL(mute(bool)), sm, SLOT(setMute(bool)));
+    connect(optionButton, SIGNAL(mute(bool)), sm, SLOT(setMute(bool)));
+    connect(optionButton, SIGNAL(minimize()), this, SLOT(showMinimized()));
+    optionButton->initOptions();
 
     windowButtons = new WindowButtons(tabs);
     connect(windowButtons, SIGNAL(close()), this, SLOT(close()));
@@ -197,7 +200,7 @@ void MainWindow::notified(int userId, QString msg)
 
 void MainWindow::addTab(int id, QString pseudo)
 {
-    DisplayChat *dc = new DisplayChat(tabs);
+    DisplayChat *dc = new DisplayChat(em, tabs);
     dc->setId(id);
     chats.insert(tabs->count(), dc);
     QString label = pseudo;;
@@ -410,6 +413,8 @@ void MainWindow::post()
     QString text = inputMsg->toPlainText();
     text.remove(text.count()-1, 1);
     text.replace('\n', "<br>");
+    em->convertShortcutToId(&text);
+
     if (idUser == -1)
         emit post(text);
     else

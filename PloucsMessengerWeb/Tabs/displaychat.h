@@ -4,12 +4,13 @@
 #include <QString>
 #include <QTextBrowser>
 #include "soundmanager.h"
+#include "emoticons.h"
 
 class DisplayChat : public QTextBrowser
 {
     Q_OBJECT
 public:
-    explicit DisplayChat(QWidget *parent = 0);
+    explicit DisplayChat(Emoticons* em, QWidget *parent = 0);
     ~DisplayChat();
     void setId(int id);
     int id();
@@ -17,6 +18,9 @@ public:
 signals:
     void newNotification(int idUser, QString msg);
     void playSound(SoundManager::Name name);
+
+protected:
+    void mousePressEvent(QMouseEvent *ev);
 
 public slots:
     void newMessage(QString data);
@@ -27,6 +31,7 @@ private:
 
     int _id = -1;
     QWidget *tabsWidget;
+    Emoticons *em;
 };
 
 #endif // DISPLAYCHAT_H

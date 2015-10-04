@@ -2,7 +2,10 @@
 
 SoundManager::SoundManager() : QObject()
 {
-    sounds.insert(SoundManager::newMessage, new QSound(QCoreApplication::applicationDirPath() + "/resources/sounds/newMessage.wav"));
+    QString soundsPath(":/sounds/new_message");
+    if (QFile(QCoreApplication::applicationDirPath() + "/resources/sounds/newMessage.wav").exists())
+        soundsPath = QCoreApplication::applicationDirPath() + "/resources/sounds/newMessage.wav";
+    sounds.insert(SoundManager::newMessage, new QSound(soundsPath));
 }
 
 SoundManager::~SoundManager()

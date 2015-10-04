@@ -1,3 +1,4 @@
+#include "mainwindow.h"
 #include <QTimer>
 #include <QToolButton>
 #include "tabsarea.h"
@@ -87,7 +88,6 @@ bool TabsArea::findAndSetDisconnect(int id, bool b)
     for (int i = 0; i < count(); ++i) {
         if (id == idDC(i)) {
             isDisconnectUser.insert(i, b);
-            qDebug() << i << id << b;
             return true;
         }
     }
@@ -152,5 +152,9 @@ void TabsArea::addTab(QWidget *widget, const QString &s)
         tabBar->setTabButton(0, QTabBar::LeftSide, 0);
     }
     isDisconnectUser.insert(count() - 1, false);
-    qDebug() << s << count() - 1;
+}
+
+void TabsArea::mousePressEvent(QMouseEvent *e)
+{
+    ((MainWindow*) this->parent()->parent())->mousePressEvent(e);
 }
