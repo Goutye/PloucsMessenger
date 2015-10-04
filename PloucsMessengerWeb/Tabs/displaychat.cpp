@@ -111,10 +111,41 @@ void DisplayChat::newMessage(QString data, int id)
         QStringList list = data.split(":");
         moveCursor(QTextCursor::End);
         if (list.count() > 1) {
-            QString message = list.at(1);
-            for (int i = 2; i < list.count(); ++i)
-                message += ":" + list.at(i);
-            insertHtml("<br><b style='font-family: Roboto;font-size:15px;color:#82B1FF;'>"+ list.at(0) +": </b><span style='font-family: Roboto;font-size:15px;'>"+ message +"</span>");
+            QString message;
+            insertHtml("<br><b style='font-family: Roboto;font-size:15px;color:#82B1FF;'>"+ list.at(0) +": </b>");
+
+            bool hasEmoteBefore = false;
+
+            QRegExp regex("\\d+");
+            QString wholeText = "<span style='font-family: Roboto;font-size:15px;'> "+ list.at(1);
+
+            for (int i = 2; i < list.count(); ++i) {
+                if (i != list.count() - 1 && regex.exactMatch(list.at(i))) {
+                    wholeText += "</span>";
+                    insertHtml(wholeText);
+                    qDebug() << wholeText;
+                    wholeText = "<span style='font-family: Roboto;font-size:15px;'>";
+                    if (em->exist(list.at(i))) {
+                        QTextCursor c = textCursor();
+                        c.insertImage(em->emote(list.at(i))->toImage());
+                    } else {
+                        em->loadEmoticon(list.at(i), textCursor());
+                    }
+                    hasEmoteBefore = true;
+                } else {
+
+                    if (!hasEmoteBefore) {
+                        message = ":";
+                    } else {
+                        message = "";
+                    }
+                    wholeText += message + list.at(i);
+                    hasEmoteBefore = false;
+                }
+            }
+            wholeText += "</span>";
+            insertHtml(wholeText);
+            qDebug() << wholeText;
             setNotification(list.at(1));
         }
         else {
