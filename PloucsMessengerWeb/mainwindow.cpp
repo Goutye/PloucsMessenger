@@ -1,3 +1,5 @@
+#include <QSizeGrip>
+#include <QTextCursor>
 #include <QStackedLayout>
 #include <QWindow>
 #include "mainwindow.h"
@@ -19,6 +21,9 @@
 #include <QDesktopWidget>
 #include <QtCore>
 
+#include "SizeGrip/fittedhsizegrips.h"
+#include "SizeGrip/vsizegrip.h"
+
 #define DEFAULT_WIDTH 400
 #define LABEL_BACKGROUND_ACTIVE_COLOR "#BBBBBB"
 #define LABEL_BACKGROUND_INACTIVE_COLOR "#888888"
@@ -29,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     qsrand(time(0));
+    setMinimumSize(370, 200);
 
     qRegisterMetaType<SoundManager::Name>("SoundManager::Name");
     sm = new SoundManager();
@@ -81,17 +87,52 @@ MainWindow::MainWindow(QWidget *parent)
 
     vLayout->addLayout(stackLayout, 10);
 
-    inputMsg = new InputTextEdit(window);
+    inputMsg = new InputTextEdit(tabs, window);
     inputMsg->setFixedHeight(60);
     ChatWidget *inputChat = new ChatWidget(window);
     QVBoxLayout *inputChatLayout = new QVBoxLayout;
     inputChat->setLayout(inputChatLayout);
     inputChatLayout->addWidget(inputMsg, 1);
+    inputChatLayout->setContentsMargins(6,10,6,6);
     vLayout->addWidget(inputChat, 1);
-
-    window->setLayout(vLayout);
     vLayout->setSpacing(0);
+
+    QWidget *widgetCenter = new QWidget(window);
+
+    QGridLayout *gLayout = new QGridLayout;
+    QSizeGrip *sg = new QSizeGrip(window);
+    sg->setFixedSize(4, 4);
+    gLayout->addWidget(sg, 0, 0, Qt::AlignTop | Qt::AlignLeft);
+    VSizeGrip *vsg = new VSizeGrip(window);
+    vsg->setFixedHeight(4);
+    gLayout->addWidget(vsg, 0, 1, Qt::AlignTop);
+    sg = new QSizeGrip(window);
+    sg->setFixedSize(4, 4);
+    gLayout->addWidget(sg, 0, 2, Qt::AlignTop | Qt::AlignRight);
+    FittedHSizeGrips *hsg = new FittedHSizeGrips(window);
+    gLayout->addWidget(hsg, 1, 0, Qt::AlignLeft);
+    gLayout->addWidget(widgetCenter, 1, 1);
+    hsg = new FittedHSizeGrips(window);
+    gLayout->addWidget(hsg, 1, 2, Qt::AlignRight);
+    sg = new QSizeGrip(window);
+    sg->setFixedSize(4, 4);
+    sg->setStyleSheet("background-color: #414141;");
+    gLayout->addWidget(sg, 2, 0, Qt::AlignBottom | Qt::AlignLeft);
+    vsg = new VSizeGrip(window);
+    vsg->setFixedHeight(4);
+    vsg->setStyleSheet("background-color: #414141;");
+    gLayout->addWidget(vsg, 2, 1, Qt::AlignBottom);
+    sg = new QSizeGrip(window);
+    sg->setFixedSize(4, 4);
+    sg->setStyleSheet("background-color: #414141;");
+    gLayout->addWidget(sg, 2, 2, Qt::AlignBottom | Qt::AlignRight);
+    gLayout->setSpacing(0);
+
+    widgetCenter->setLayout(vLayout);
+    widgetCenter->setContentsMargins(0, 0, 0, 0);
+    gLayout->setContentsMargins(0,0,0,0);
     window->setContentsMargins(0,0,0,0);
+    window->setLayout(gLayout);
     setContentsMargins(0,0,0,0);
 
     setCentralWidget(window);
@@ -103,10 +144,10 @@ MainWindow::MainWindow(QWidget *parent)
     QShortcut *close = new QShortcut(QKeySequence(Qt::Key_Escape), this, SLOT(close()));
 
     window->setAttribute(Qt::WA_TranslucentBackground);
-    setStyleSheet("QMainWindow { background-color: #202020; "
-                                "border: 5px solid black;}"
-                  "QMainWindow > QWidget { background-color: #202020; }"
-                  "QMainWindow > QWidget > QWidget { background-color: #414141; }"
+    setStyleSheet("QSizeGrip { width:2px; height }"
+                  "QMainWindow { background-color: #202020;}"
+                  "QMainWindow > QWidget > QWidget { background-color: #202020; }"
+                  "QMainWindow > QWidget > QWidget > QWidget { background-color: #414141; }"
                   "QTextEdit { border-width: 2px;"
                               "border-style:solid;"
                               "border-color: #525252;"
@@ -136,8 +177,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     notifWindow = new QWidget();
     notifWindow->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
-    notifWindow->setFixedWidth(200);
-    notifWindow->setFixedHeight(60);
+    notifWindow->setFixedWidth(240);
+    notifWindow->setFixedHeight(90);
     notifWindow->setContentsMargins(0,0,0,0);
     notifWindow->setStyleSheet("QTextEdit {"
                                "    background-color: #2F2F2F;"
@@ -153,9 +194,7 @@ MainWindow::MainWindow(QWidget *parent)
     notifDialogLayout->setSpacing(0);
     notifDialogLayout->setContentsMargins(0,0,0,0);
 
-    notif = new QTextEdit(notifWindow);
-    notif->setReadOnly(true);
-    notif->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    notif = new Notification(notifWindow, this, tabs);
     notifDialogLayout->addWidget(notif);
     notifWindow->setLayout(notifDialogLayout);
     QRect scr = QApplication::desktop()->screenGeometry();
@@ -191,8 +230,48 @@ void MainWindow::notified(int userId, QString msg)
         }
 
         QString notifText = "<b style='font-family: Roboto;font-size:15px;color: #82B1FF;'>"+ tabName +"</b>";
-        notifText += "<br><b style='font-family: Roboto;font-size:12px;color:#82B1FF;'>"+ pseudo +"</b><span style='font-family: Roboto;font-size:12px;'>"+ message +"</span>";
-        notif->setHtml(notifText);
+        notifText += "<br><b style='font-family: Roboto;font-size:12px;color:#82B1FF;'>"+ pseudo +"</b>";
+        notif->setText("");
+        notif->insertHtml(notifText);
+        QRegExp regex("\\d+");
+        QStringList list = message.split(":");
+        QString wholeText = "<span style='font-family: Roboto;font-size:15px;'> ";
+        if (list.count() > 1) {
+            wholeText += list.at(1);
+            bool hasEmoteBefore = false;
+            for (int i = 2; i < list.count(); ++i) {
+                if (i != list.count() - 1 && regex.exactMatch(list.at(i))) {
+                    wholeText += "</span>";
+                    notifText += wholeText;
+                    notif->insertHtml(wholeText);
+                    qDebug() << wholeText;
+                    wholeText = "<span style='font-family: Roboto;font-size:15px;'>";
+                    if (em->exist(list.at(i))) {
+                        qDebug() << "cc";
+                        QTextCursor c = notif->textCursor();
+                        c.insertImage(em->emote(list.at(i))->toImage());
+                    } else {
+                        em->loadEmoticon(list.at(i), notif->textCursor());
+                    }
+                    hasEmoteBefore = true;
+                } else {
+
+                    if (!hasEmoteBefore) {
+                        message = ":";
+                    } else {
+                        message = "";
+                    }
+                    wholeText += message + list.at(i);
+                    hasEmoteBefore = false;
+                }
+            }
+        } else {
+            wholeText += message;
+        }
+        wholeText += "</span>";
+        notifText += wholeText;
+        notif->insertHtml(wholeText);
+        notif->setId(userId);
         notifWindow->show();
         notifTimer->start(5000);
     }
@@ -311,6 +390,7 @@ void MainWindow::connectionUser(QString error)
     }
     else {
         QDialog dialog(this);
+        dialog.setStyleSheet("background-color: #202020; color:#EEEEEE;");
         QFormLayout form(&dialog);
         QLabel *dialogLabel = new QLabel(error);
         form.addRow(dialogLabel);
@@ -406,12 +486,14 @@ void MainWindow::userPM(int id, QString pseudo)
 
 void MainWindow::post()
 {
-    if (inputMsg->toPlainText().isEmpty())
+    if (inputMsg->toPlainText().count() == 0) {
+        inputMsg->setText("");
         return;
-
+    }
+    qDebug() << inputMsg->toPlainText();
     int idUser = tabs->currentIdDC();
     QString text = inputMsg->toPlainText();
-    text.remove(text.count()-1, 1);
+    text.remove(text.count(), 1);
     text.replace('\n', "<br>");
     em->convertShortcutToId(&text);
 
@@ -428,6 +510,7 @@ void MainWindow::mousePressEvent(QMouseEvent* event)
 {
     m_nMouseClick_X_Coordinate = event->x();
     m_nMouseClick_Y_Coordinate = event->y();
+    tabs->setNotify(tabs->currentIndex(), false);
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent* event)

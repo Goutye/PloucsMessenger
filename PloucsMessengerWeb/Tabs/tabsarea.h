@@ -17,6 +17,7 @@ public:
     ~TabsArea();
     int currentIdDC();
     int idDC(int i);
+    void setCurrentIdDC(int id);
     bool findAndSet(int id, QString pseudo);
     bool findAndSetDisconnect(int id, bool b);
     void addTab(QWidget *widget, const QString &s);

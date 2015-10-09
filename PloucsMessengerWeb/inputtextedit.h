@@ -9,12 +9,13 @@ class InputTextEdit : public QTextEdit
 {
     Q_OBJECT
 public:
-    explicit InputTextEdit(QWidget *parent = 0);
+    explicit InputTextEdit(QWidget *tabs, QWidget *parent = 0);
     ~InputTextEdit();
 
 protected:
     void keyPressEvent(QKeyEvent *e);
     void keyReleaseEvent(QKeyEvent *e);
+    void mousePressEvent(QMouseEvent *e);
 
 signals:
     void returnPressed();
@@ -23,6 +24,7 @@ public slots:
 
 private:
     bool canSend = true;
+    QWidget *tabs;
 };
 
 #endif // INPUTTEXTEDIT_H

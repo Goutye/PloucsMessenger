@@ -20,10 +20,11 @@ TabsArea::TabsArea(QWidget *parent) : QTabWidget(parent)
                         "background: #202020;"
                         "border-bottom: 2px solid #202020;"
                         "width: "+ QString("%1").arg(TAB_WIDTH) +"px;"
-                        "height: 8ex;"
+                        "height: 28px;"
                         "padding: 2px;"
                         "padding-left: "+ QString("%1").arg(TAB_PADDING) +"px;"
                         "padding-right: "+ QString("%1").arg(TAB_PADDING) +"px;"
+                        "padding-bottom: 4px;"
                         "color: #888888;"
                         "font-size:16px;"
                         "font-family: Roboto;"
@@ -59,6 +60,16 @@ void TabsArea::currentChanged(int index)
 int TabsArea::currentIdDC()
 {
     return ((DisplayChat *) currentWidget())->id();
+}
+
+void TabsArea::setCurrentIdDC(int id)
+{
+    for (int i = 0; i < count(); ++i) {
+        if (id == idDC(i)) {
+            setCurrentIndex(i);
+            return;
+        }
+    }
 }
 
 int TabsArea::idDC(int i)

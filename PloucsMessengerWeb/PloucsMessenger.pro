@@ -27,7 +27,11 @@ SOURCES += main.cpp\
     Options/optionbutton.cpp \
     Options/useraction.cpp \
     emoticons.cpp \
-    emoticondownloader.cpp
+    emoticondownloader.cpp \
+    notification.cpp \
+    SizeGrip/hsizegrip.cpp \
+    SizeGrip/vsizegrip.cpp \
+    SizeGrip/fittedhsizegrips.cpp
 
 HEADERS  += mainwindow.h \
     socketclient.h \
@@ -42,7 +46,11 @@ HEADERS  += mainwindow.h \
     Options/windowbuttons.h \
     Options/useraction.h \
     emoticons.h \
-    emoticondownloader.h
+    emoticondownloader.h \
+    notification.h \
+    SizeGrip/hsizegrip.h \
+    SizeGrip/vsizegrip.h \
+    SizeGrip/fittedhsizegrips.h
 
 RESOURCES += \
     icons.qrc \

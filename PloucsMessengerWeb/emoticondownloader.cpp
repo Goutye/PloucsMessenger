@@ -26,14 +26,11 @@ void EmoticonDownloader::fileDownloaded(QNetworkReply* pReply) {
         return;
     }
     m_DownloadedData = pReply->readAll();
-    qDebug() << "Download successful";
+    qDebug() << "Download emoticon successful";
     pReply->deleteLater();
     image = new QPixmap();
-    qDebug() << "here";
     image->loadFromData(m_DownloadedData);
-    qDebug() << "here";
     c.setPosition(position);
-    qDebug() << "here";
     c.insertImage(image->toImage());
 
     QFile file(QCoreApplication::applicationDirPath() + "/resources/emoticons/" + name);

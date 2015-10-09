@@ -1,6 +1,8 @@
+#include <QUrl>
+#include <QRegExp>
 #include "displaychat.h"
 #include <QGuiApplication>
-
+#include <QTextDocument>
 #include <qDebug>
 #include <QTabBar>
 #include "tabsarea.h"
@@ -50,12 +52,14 @@ void DisplayChat::setNotification(QString msg)
             emit newNotification(_id, msg);
         }
 
-        emit playSound(SoundManager::newMessage);
+        if (msg.split(":").count() > 1)
+            emit playSound(SoundManager::newMessage);
     }
 }
 
 void DisplayChat::newMessage(QString data)
 {
+    data = data.toHtmlEscaped();
     qDebug() << "Message received: " + data;
     QStringList list = data.split(":");
     moveCursor(QTextCursor::End);
@@ -106,6 +110,7 @@ void DisplayChat::newMessage(QString data)
 
 void DisplayChat::newMessage(QString data, int id)
 {
+    data = data.toHtmlEscaped();
     if (id == _id) {
         qDebug() << "Message received: " + data + " " + id;
         QStringList list = data.split(":");
@@ -146,7 +151,7 @@ void DisplayChat::newMessage(QString data, int id)
             wholeText += "</span>";
             insertHtml(wholeText);
             qDebug() << wholeText;
-            setNotification(list.at(1));
+            setNotification(data);
         }
         else {
             insertHtml("<br><span style='font-family: Roboto;font-size:15px;'>"+ data +"</span>");
@@ -159,6 +164,34 @@ void DisplayChat::newMessage(QString data, int id)
 
 void DisplayChat::mousePressEvent(QMouseEvent *ev)
 {
+    QTextBrowser::mousePressEvent(ev);
     TabsArea *ta = ((TabsArea*) tabsWidget);
     ta->setNotify(ta->currentIndex(), false);
+}
+
+void DisplayChat::insertHtml(const QString &oldText)
+{
+    QString text = oldText;
+    text.replace("&lt;br&gt;", "<br>");
+    QRegExp validURLRegex("(?:https?|ftp)://\\S+");
+    QRegExp spanRegex("</span>.*");
+    int pos = 0;
+    while ((pos = validURLRegex.indexIn(text, pos)) != -1) {
+        QString urlString = text.mid(pos, validURLRegex.matchedLength());
+        int i = spanRegex.indexIn(urlString, 0);
+        if (i >= 0)
+            urlString.remove(i, spanRegex.matchedLength());
+        QUrl *url = new QUrl(urlString);
+        if (url->isValid()) {
+            QString urlHTML = QString("<a style='color:#EEEEEE;' href='"+ url->toString() +"'>") + url->toString() + "</a>";
+            int nbReplacedChars = validURLRegex.matchedLength();
+            if(spanRegex.matchedLength() > 0)
+                nbReplacedChars += spanRegex.matchedLength();
+            text.replace(pos, nbReplacedChars, urlHTML);
+            pos += urlHTML.count();
+        } else {
+            pos += validURLRegex.matchedLength();
+        }
+    }
+    QTextBrowser::insertHtml(text);
 }

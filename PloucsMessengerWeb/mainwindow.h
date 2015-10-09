@@ -12,7 +12,7 @@
 #include <QMainWindow>
 #include <QLineEdit>
 #include <QSplitter>
-#include <QTextEdit>
+#include <QTextBrowser>
 #include <QLabel>
 #include <QMouseEvent>
 #include "socketclient.h"
@@ -20,6 +20,7 @@
 #include "Options/optionbutton.h"
 #include "Options/useraction.h"
 #include "Tabs/displaychat.h"
+#include "notification.h"
 
 class MainWindow : public QMainWindow
 {
@@ -88,7 +89,7 @@ private:
     int  m_nMouseClick_Y_Coordinate = 0;
     bool tokenConnectionFailed = false;
 
-    QTextEdit *notif;
+    Notification *notif;
     QWidget *notifWindow;
     QTimer *notifTimer;
 

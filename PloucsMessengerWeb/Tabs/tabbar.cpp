@@ -140,3 +140,10 @@ void TabBar::paintEvent(QPaintEvent *event)
 //        }
     }
 }
+
+void TabBar::mousePressEvent(QMouseEvent *ev)
+{
+    QTabBar::mousePressEvent(ev);
+    TabsArea *ta = ((TabsArea*) parent());
+    ta->setNotify(ta->currentIndex(), false);
+}
