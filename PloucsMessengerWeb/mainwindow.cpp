@@ -292,7 +292,13 @@ void MainWindow::addTab(int id, QString pseudo)
 
 MainWindow::~MainWindow()
 {
-
+    delete socket;
+    delete window;
+    delete sm;
+    delete notif;
+    delete notifWindow;
+    delete notifTimer;
+    delete em;
 }
 
 void MainWindow::resizeEvent(QResizeEvent *e)
@@ -319,6 +325,7 @@ void MainWindow::getFont()
     filePMupdated.write(fd->downloadedData());
     filePMupdated.close();
     if (!QFile(QCoreApplication::applicationDirPath() + "/resources/Roboto-Regular.ttf").exists()) {
+        delete fd;
         fd = new FileDownloader(QUrl("http://www.goutye.com/ploucs/Roboto-Regular.ttf"), this);
         connect(fd, SIGNAL(downloaded()), this, SLOT(updateSettingsApp()));
     } else {
@@ -336,6 +343,7 @@ void MainWindow::updateSettingsApp()
         fileTTFupdated.write(fd->downloadedData());
         fileTTFupdated.close();
     }
+    delete fd;
     fd = new FileDownloader(QUrl("http://www.goutye.com/ploucs/settings.exe"), this);
     connect(fd, SIGNAL(downloaded()), this, SLOT(updatePM()));
 }
@@ -347,6 +355,7 @@ void MainWindow::updatePM()
     fileSettingsupdated.open(QFile::WriteOnly);
     fileSettingsupdated.write(fd->downloadedData());
     fileSettingsupdated.close();
+    delete fd;
 
     if (!QFile(program).exists() || QFile::remove(program)) {
         QFile(QCoreApplication::applicationDirPath() + "/settings.exe.update").rename(QCoreApplication::applicationDirPath() + "/settings.exe");

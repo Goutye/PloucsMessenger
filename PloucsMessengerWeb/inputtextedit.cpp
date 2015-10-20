@@ -47,6 +47,8 @@ void InputTextEdit::keyReleaseEvent(QKeyEvent *e)
 
 void InputTextEdit::mousePressEvent(QMouseEvent *e)
 {
+    QTextEdit::mousePressEvent(e);
+
     TabsArea *ta = ((TabsArea*) tabs);
     ta->setNotify(ta->currentIndex(), false);
 }

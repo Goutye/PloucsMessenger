@@ -21,7 +21,9 @@ Emoticons::Emoticons(QObject *parent) : QObject(parent)
 
 Emoticons::~Emoticons()
 {
-
+    for (QMap<QString, QPixmap*>::iterator it = emotes.begin(); it != emotes.end(); ++it) {
+        delete it.value();
+    }
 }
 
 void Emoticons::isDownloaded()
@@ -31,7 +33,7 @@ void Emoticons::isDownloaded()
     file.write(fd->downloadedData());
     file.close();
     load();
-    fd = 0;
+    delete fd;
 }
 
 void Emoticons::createShortcuts()

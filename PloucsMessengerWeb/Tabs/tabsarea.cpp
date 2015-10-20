@@ -99,6 +99,7 @@ bool TabsArea::findAndSetDisconnect(int id, bool b)
     for (int i = 0; i < count(); ++i) {
         if (id == idDC(i)) {
             isDisconnectUser.insert(i, b);
+            tabBar()->repaint();
             return true;
         }
     }

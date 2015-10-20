@@ -16,7 +16,8 @@ SocketClient::SocketClient(QObject *parent) : QObject(parent)
 
 SocketClient::~SocketClient()
 {
-
+    delete manager;
+    delete timerPing;
 }
 
 void SocketClient::delay( int millisecondsToWait )
@@ -155,7 +156,7 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                     QStringList infos = QString(*it).split(":");
                     users.insert(infos.at(0).toInt(), infos.at(1));
                 }
-                timerPing->start(100);
+                timerPing->start(500);
             }
             else if (prefix.compare("listOnline") == 0)
             {
@@ -181,6 +182,8 @@ void SocketClient::replyFinished(QNetworkReply* reply)
                 }
                 QByteArray hash = crypto.result().toHex();
                 qDebug() << QString(hash) + " " + s;
+                file.close();
+                file.deleteLater();
 
                 emit updateAvailable(QString(hash).compare(s) != 0 || !QFile(QCoreApplication::applicationDirPath() + "/settings.exe").exists());
             }
@@ -190,6 +193,8 @@ void SocketClient::replyFinished(QNetworkReply* reply)
             }
         }
     }
+
+    reply->deleteLater();
 }
 
 void SocketClient::ping()
@@ -199,12 +204,13 @@ void SocketClient::ping()
         "application/x-www-form-urlencoded");
 
     manager->get(request);
-    timerPing->start(100);  // @todo Adaptative ping
+    timerPing->start(500);  // @todo Adaptative ping
 }
 
 void SocketClient::post(QString data)
 {
     write(QString("msg:" + data).toUtf8());
+    emit newMessage(pseudo + ": " + data);
 }
 
 void SocketClient::post(QString data, int id)

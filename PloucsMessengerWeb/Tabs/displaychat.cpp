@@ -17,7 +17,6 @@ DisplayChat::DisplayChat(Emoticons *em, QWidget *parent) : QTextBrowser(parent),
 
 DisplayChat::~DisplayChat()
 {
-
 }
 
 void DisplayChat::setId(int id)

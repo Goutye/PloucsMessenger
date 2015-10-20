@@ -14,7 +14,6 @@ EmoticonDownloader::EmoticonDownloader(QString name, QTextCursor c, QObject *par
 
 EmoticonDownloader::~EmoticonDownloader()
 {
-
 }
 
 void EmoticonDownloader::fileDownloaded(QNetworkReply* pReply) {

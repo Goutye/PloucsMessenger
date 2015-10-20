@@ -60,7 +60,7 @@ OptionButton::OptionButton(QWidget *parent) : QToolButton(parent)
 
 OptionButton::~OptionButton()
 {
-
+    delete menu;
 }
 
 void OptionButton::initOptions()

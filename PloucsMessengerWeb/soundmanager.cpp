@@ -10,7 +10,9 @@ SoundManager::SoundManager() : QObject()
 
 SoundManager::~SoundManager()
 {
-
+    for (QMap<SoundManager::Name, QSound *>::iterator it = sounds.begin(); it != sounds.end(); ++it) {
+        delete it.value();
+    }
 }
 
 void SoundManager::play(SoundManager::Name name)

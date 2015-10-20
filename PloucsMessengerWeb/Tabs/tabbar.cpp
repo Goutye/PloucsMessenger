@@ -101,6 +101,10 @@ void TabBar::paintEvent(QPaintEvent *event)
             p.drawControl(QStyle::CE_TabBarTab, tab);
             setStyleSheet("");
         } else if (((TabsArea *) parent())->isDisconnected(i)) {
+            /*QColor c = tab.palette.color(QPalette::Active, QPalette::Background);
+            tab.palette.setColor(QPalette::Active, QPalette::Background, QColor(0x33, 0x33, 0x33));
+            for (int i = 0; i < 20; ++i)
+                qDebug() << tab.palette.color(tab.palette.currentColorGroup(), static_cast<QPalette::ColorRole>(i));*/
             setStyleSheet("QTabBar::tab{"
                           " color:#333333;"
                           "}"
@@ -108,6 +112,7 @@ void TabBar::paintEvent(QPaintEvent *event)
                           " color: #EEEEEE;"
                           "}");
             p.drawControl(QStyle::CE_TabBarTab, tab);
+            //tab.palette.setColor(QPalette::Active, QPalette::Background, c);
             setStyleSheet("");
         } else {
             //p.drawControl(QStyle::CE_TabBarTab, tab);
