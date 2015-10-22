@@ -154,7 +154,7 @@ MainWindow::MainWindow(QWidget *parent)
                               "background-color: #414141;"
                               "color: #F4F4F4;}"
                   "QToolBar { border-color: #666666; }"
-                  "QTabWidget QTextEdit { border: 0px solid black; "
+                  "TabsArea QTextEdit { border: 0px solid black; "
                               "border-bottom: 5px solid qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
                   "stop: 0 #2E2F2F, stop: 0.5 #272827, stop: 1.0 #222222);"
                               "background-color: #2F2F2F;"
@@ -304,7 +304,7 @@ MainWindow::~MainWindow()
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     optionButton->move((TAB_WIDTH + TAB_PADDING * 2) * tabs->count() + 11, 11);
-    windowButtons->move(width() - 40, 13);
+    windowButtons->move(width() - 110, 4);
 }
 
 void MainWindow::updateAvailable(bool newUpdate)

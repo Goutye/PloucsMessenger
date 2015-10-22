@@ -2,14 +2,16 @@
 #define TABSAREA_H
 
 #include <QWidget>
-#include <QTabWidget>
+#include <QButtonGroup>
+#include <QStackedWidget>
+#include <QHBoxLayout>
 #include <QMap>
 #include "displaychat.h"
 
 #define TAB_WIDTH 75
 #define TAB_PADDING 10
 
-class TabsArea : public QTabWidget
+class TabsArea : public QWidget
 {
     Q_OBJECT
 public:
@@ -24,6 +26,8 @@ public:
     void setNotify(int i, bool b);
     bool notify(int i);
     bool isDisconnected(int i);
+    int count();
+    int currentIndex();
 
 signals:
 
@@ -41,9 +45,14 @@ private slots:
 
 private:
     void setIdDC(int i, int id);
+    void changeProperty(QWidget *w, QString name, bool b);
 
     QMap<int, bool> isDisconnectUser;
     QMap<int, bool> notifyTabs;
+    QButtonGroup *tabbar;
+    QHBoxLayout *buttonsLayout;
+    QStackedWidget *tabs;
+    int _currentIndex = 0;
 };
 
 #endif // TABSAREA_H

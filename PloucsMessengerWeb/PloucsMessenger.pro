@@ -19,7 +19,6 @@ SOURCES += main.cpp\
     filedownloader.cpp \
     soundmanager.cpp \
     inputtextedit.cpp \
-    Tabs/tabbar.cpp \
     Tabs/tabsarea.cpp \
     Tabs/chatwidget.cpp \
     Tabs/displaychat.cpp \
@@ -31,17 +30,16 @@ SOURCES += main.cpp\
     notification.cpp \
     SizeGrip/hsizegrip.cpp \
     SizeGrip/vsizegrip.cpp \
-    SizeGrip/fittedhsizegrips.cpp
+    SizeGrip/fittedhsizegrips.cpp \
+    Tabs/pushbutton.cpp
 
 HEADERS  += mainwindow.h \
     socketclient.h \
     filedownloader.h \
     soundmanager.h \
     inputtextedit.h \
-    Tabs/tabsarea.h \
     Tabs/chatwidget.h \
     Tabs/displaychat.h \
-    Tabs/tabbar.h \
     Options/optionbutton.h \
     Options/windowbuttons.h \
     Options/useraction.h \
@@ -50,7 +48,9 @@ HEADERS  += mainwindow.h \
     notification.h \
     SizeGrip/hsizegrip.h \
     SizeGrip/vsizegrip.h \
-    SizeGrip/fittedhsizegrips.h
+    SizeGrip/fittedhsizegrips.h \
+    Tabs/tabsarea.h \
+    Tabs/pushbutton.h
 
 RESOURCES += \
     icons.qrc \
