@@ -207,6 +207,8 @@ void TabsArea::addTab(QWidget *widget, const QString &s)
 {
     tabs->addWidget(widget);
     PushButton *b = new PushButton(s);
+    b->setFocusPolicy(Qt::StrongFocus);
+    b->setFocusProxy(this);
     buttonsLayout->insertWidget(tabbar->buttons().count(), b);
     tabbar->addButton(b);
     if (tabs->count() == 1) {
@@ -218,6 +220,15 @@ void TabsArea::addTab(QWidget *widget, const QString &s)
 void TabsArea::mousePressEvent(QMouseEvent *e)
 {
     ((MainWindow*) this->parent()->parent())->mousePressEvent(e);
+}
+
+void TabsArea::focusInEvent(QFocusEvent *e)
+{
+    QWidget::focusInEvent(e);
+    qDebug() << e << "Hello";
+    if (e->gotFocus()) {
+        setNotify(currentIndex(), false);
+    }
 }
 
 int TabsArea::count()

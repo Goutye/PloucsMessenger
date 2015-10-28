@@ -16,6 +16,7 @@ protected:
     void keyPressEvent(QKeyEvent *e);
     void keyReleaseEvent(QKeyEvent *e);
     void mousePressEvent(QMouseEvent *e);
+    void focusInEvent(QFocusEvent *e);
 
 signals:
     void returnPressed();

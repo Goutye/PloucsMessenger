@@ -1,3 +1,7 @@
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
+#include <QSystemTrayIcon>
 #include <QPushButton>
 #include "Options/windowbuttons.h"
 #include "Tabs/tabsarea.h"
@@ -6,9 +10,6 @@
 #include "emoticons.h"
 #include <QAction>
 #include <QList>
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
-
 #include <QMainWindow>
 #include <QLineEdit>
 #include <QSplitter>
@@ -29,9 +30,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
-
     void mousePressEvent(QMouseEvent* event);
-    void mouseMoveEvent(QMouseEvent* event);
 
 public slots:
     void connection(int id, QString pseudo);
@@ -55,9 +54,10 @@ signals:
 protected:
     void closeEvent(QCloseEvent *event);
     void resizeEvent(QResizeEvent *e);
+    void mouseMoveEvent(QMouseEvent* event);
+    void focusInEvent(QFocusEvent *e);
 
 private slots:
-
 
 private:
     void addTab(int id, QString pseudo);

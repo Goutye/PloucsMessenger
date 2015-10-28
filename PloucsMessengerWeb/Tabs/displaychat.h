@@ -22,6 +22,7 @@ signals:
 protected:
     void mousePressEvent(QMouseEvent *ev);
     void insertHtml(const QString &text);
+    void focusInEvent(QFocusEvent *e);
 
 public slots:
     void newMessage(QString data);

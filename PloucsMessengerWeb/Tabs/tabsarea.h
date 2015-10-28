@@ -39,6 +39,7 @@ public slots:
 
 protected:
     void mousePressEvent(QMouseEvent *e);
+    void focusInEvent(QFocusEvent *e);
 
 private slots:
     void refreshAlert();

@@ -3,7 +3,7 @@
 
 InputTextEdit::InputTextEdit(QWidget *tabs, QWidget *parent) : QTextEdit(parent), tabs(tabs)
 {
-
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 InputTextEdit::~InputTextEdit()
@@ -51,4 +51,14 @@ void InputTextEdit::mousePressEvent(QMouseEvent *e)
 
     TabsArea *ta = ((TabsArea*) tabs);
     ta->setNotify(ta->currentIndex(), false);
+}
+
+void InputTextEdit::focusInEvent(QFocusEvent *e)
+{
+    QTextEdit::focusInEvent(e);
+    qDebug() << e << "Hello";
+    if (e->gotFocus()) {
+        TabsArea *ta = ((TabsArea*) tabs);
+        ta->setNotify(ta->currentIndex(), false);
+    }
 }

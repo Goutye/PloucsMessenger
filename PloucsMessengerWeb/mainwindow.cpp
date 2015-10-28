@@ -28,7 +28,7 @@
 #define LABEL_BACKGROUND_ACTIVE_COLOR "#BBBBBB"
 #define LABEL_BACKGROUND_INACTIVE_COLOR "#888888"
 
-#define CHECK_UPDATE
+#define CHECK_UPDATEw
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -167,13 +167,6 @@ MainWindow::MainWindow(QWidget *parent)
                   "QMenu::item::selected { color:#EEEEEE; }"
                   "QMenu::separator { background-color: #404040;"
                   "                   height: 2px;}");
-    setWindowOpacity(1);
-    resize(DEFAULT_WIDTH, height());
-
-#ifndef CHECK_UPDATE
-    connectionUser();
-    qDebug() << "\nDEBUG VERSION\n";
-#endif
 
     notifWindow = new QWidget();
     notifWindow->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
@@ -203,6 +196,14 @@ MainWindow::MainWindow(QWidget *parent)
     notifTimer = new QTimer();
 
     connect(notifTimer, SIGNAL(timeout()), notifWindow, SLOT(hide()));
+    setFocusPolicy(Qt::StrongFocus);
+
+    setWindowOpacity(1);
+    resize(DEFAULT_WIDTH, height());
+#ifndef CHECK_UPDATE
+    connectionUser();
+    qDebug() << "\nDEBUG VERSION\n";
+#endif
 }
 
 void MainWindow::notified(int userId, QString msg)
@@ -525,6 +526,15 @@ void MainWindow::mousePressEvent(QMouseEvent* event)
 void MainWindow::mouseMoveEvent(QMouseEvent* event)
 {
     move(event->globalX()-m_nMouseClick_X_Coordinate,event->globalY()-m_nMouseClick_Y_Coordinate);
+}
+
+void MainWindow::focusInEvent(QFocusEvent *e)
+{
+    QMainWindow::focusInEvent(e);
+    qDebug() << e << "Hello";
+    if (e->gotFocus()) {
+        tabs->setNotify(tabs->currentIndex(), false);
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

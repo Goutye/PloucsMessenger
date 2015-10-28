@@ -1,3 +1,4 @@
+#include <QFocusEvent>
 #include <QUrl>
 #include <QRegExp>
 #include "displaychat.h"
@@ -13,6 +14,7 @@ DisplayChat::DisplayChat(Emoticons *em, QWidget *parent) : QTextBrowser(parent),
     setReadOnly(true);
     setOpenExternalLinks(true);
     setStyleSheet("QTextBrowser { padding:10px; font-family: Roboto; }");
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 DisplayChat::~DisplayChat()
@@ -166,6 +168,16 @@ void DisplayChat::mousePressEvent(QMouseEvent *ev)
     QTextBrowser::mousePressEvent(ev);
     TabsArea *ta = ((TabsArea*) tabsWidget);
     ta->setNotify(ta->currentIndex(), false);
+}
+
+void DisplayChat::focusInEvent(QFocusEvent *e)
+{
+    QTextBrowser::focusInEvent(e);
+    qDebug() << e << "Hello";
+    if (e->gotFocus()) {
+        TabsArea *ta = ((TabsArea*) tabsWidget);
+        ta->setNotify(ta->currentIndex(), false);
+    }
 }
 
 void DisplayChat::insertHtml(const QString &oldText)
