@@ -33,9 +33,10 @@ WindowButtons::WindowButtons(QWidget *parent) : QWidget(parent)
     connect(minimize, SIGNAL(clicked()), this, SLOT(emitMinimize()));
 
     QHBoxLayout *layout = new QHBoxLayout();
-    layout->addStretch();
+
     layout->addWidget(minimize);
     layout->addWidget(close);
+    layout->addStretch();
     setLayout(layout);
     layout->setSpacing(6);
     layout->setContentsMargins(0,0,0,0);

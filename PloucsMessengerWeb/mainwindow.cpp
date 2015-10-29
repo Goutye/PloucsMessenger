@@ -304,8 +304,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
-    optionButton->move((TAB_WIDTH + TAB_PADDING * 2) * tabs->count() + 11, 11);
-    windowButtons->move(width() - 110, 4);
+    optionButton->move((TAB_WIDTH + TAB_PADDING * 2) * tabs->count() + 10, 11);
+    windowButtons->move(width() - 44, 4);
 }
 
 void MainWindow::updateAvailable(bool newUpdate)
